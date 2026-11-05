@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { AGE_GATE_BOOT, AgeGate } from "@/components/mag/age-gate";
-import { SiteFooter, SiteHeader } from "@/components/mag/chrome";
 import { getSiteContext } from "@/lib/site-context";
 import { layoutOf, themeStyle } from "@/lib/theme";
 
@@ -15,29 +13,17 @@ export async function generateMetadata({ params }: LayoutProps<"/[site]">): Prom
   };
 }
 
+/** Applies the publication's theme. Public chrome lives in (public)/layout. */
 export default async function SiteLayout({ children, params }: LayoutProps<"/[site]">) {
   const ctx = await getSiteContext((await params).site);
-  const { theme, settings } = ctx.publication;
+  const { theme } = ctx.publication;
   return (
     <div
       className={`site ${layoutOf(theme)}`}
       data-mode={theme.mode === "light" || theme.mode === "dark" ? theme.mode : "system"}
       style={themeStyle(theme)}
     >
-      {settings.ageGate.enabled && (
-        <>
-          <script dangerouslySetInnerHTML={{ __html: AGE_GATE_BOOT }} />
-          <AgeGate name={ctx.publication.name} />
-        </>
-      )}
-      <a href="#main" className="skip">
-        Skip to content
-      </a>
-      <SiteHeader ctx={ctx} />
-      <main id="main" style={{ paddingBottom: "clamp(24px, 4cqw, 64px)" }}>
-        {children}
-      </main>
-      <SiteFooter ctx={ctx} />
+      {children}
     </div>
   );
 }

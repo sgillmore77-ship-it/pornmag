@@ -1,0 +1,190 @@
+"use server";
+
+/**
+ * Every admin mutation. Each one re-checks the signed-in user's permission
+ * for the publication on this host (never trusting the client), writes an
+ * audit entry, and refreshes cached public pages when readers would see a
+ * change.
+ */
+import { redirect } from "next/navigation";
+import { audit, purge, requireAdmin, run, type ActionResult } from "@/lib/admin";
+import { deleteContent, saveContent, type ContentInput } from "@/data/admin/content";
+import {
+  ALLOWED_IMAGE_TYPES,
+  createMediaRow,
+  MAX_UPLOAD_BYTES,
+  sniffImageType,
+  storageKeyFor,
+  updateMediaMeta,
+} from "@/data/admin/media";
+import { deleteRedirect, saveHomepage, saveRedirect, saveSettings } from "@/data/admin/site";
+import { authorForUser, deleteAuthor, deleteCategory, deleteTag, saveAuthor, saveCategory, saveTag } from "@/data/admin/taxonomy";
+import type { z } from "zod";
+import type { homepageInput, redirectInput, settingsInput } from "@/data/admin/site";
+import type { authorInput, categoryInput, tagInput } from "@/data/admin/taxonomy";
+import { putObject } from "@/lib/storage";
+
+// ---------- Content ----------
+
+export async function saveContentAction(input: ContentInput): Promise<ActionResult<{ id: string; slug: string }>> {
+  return run(async () => {
+    const a = await requireAdmin("content.create");
+    // New pieces get the writer's byline if none was chosen.
+    if (!input.id && (!input.authorIds || input.authorIds.length === 0)) {
+      input = { ...input, authorIds: [await authorForUser(a.db, a.ctx.site, a.user)] };
+    }
+    const r = await saveContent(a.db, a.ctx.site, a.actor, input);
+    await audit(a, r.isNew ? "content.create" : "content.update", "content", r.id, { title: input.title, status: r.status });
+    if (r.status === "published" || r.wasLive) await purge(a);
+    return { id: r.id, slug: r.slug };
+  }, "Saved");
+}
+
+export async function deleteContentAction(id: string): Promise<ActionResult> {
+  const result = await run(async () => {
+    const a = await requireAdmin("content.edit.any");
+    const r = await deleteContent(a.db, a.ctx.site, a.actor, id);
+    await audit(a, "content.delete", "content", id, { title: r.title });
+    await purge(a);
+  });
+  if (result.ok) redirect("/admin/content?deleted=1");
+  return result;
+}
+
+// ---------- Media ----------
+
+export async function uploadMediaAction(form: FormData): Promise<ActionResult<{ id: string; storageKey: string; alt: string; width: number | null; height: number | null }>> {
+  return run(async () => {
+    const a = await requireAdmin("media.upload");
+    const file = form.get("file");
+    if (!(file instanceof File)) throw new Error("Choose an image to upload");
+    if (file.size > MAX_UPLOAD_BYTES) throw new Error("Images must be 15 MB or smaller");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    // Trust the file's contents, not its name or the browser's label.
+    const type = sniffImageType(bytes);
+    if (!type || !ALLOWED_IMAGE_TYPES[type]) throw new Error("Only JPEG, PNG, WebP, AVIF and GIF images can be uploaded");
+    const width = Number(form.get("width")) || null;
+    const height = Number(form.get("height")) || null;
+    const alt = String(form.get("alt") ?? "").trim().slice(0, 300);
+    const key = storageKeyFor(a.ctx.site, type);
+    await putObject(key, bytes, type);
+    const row = await createMediaRow(a.db, a.ctx.site, { storageKey: key, mimeType: type, sizeBytes: file.size, width, height, alt, uploadedBy: a.user.id });
+    await audit(a, "media.upload", "media", row.id, { size: file.size, type });
+    return { id: row.id, storageKey: row.storageKey, alt: row.alt, width: row.width, height: row.height };
+  }, "Uploaded");
+}
+
+export async function updateMediaAction(input: { id: string; alt: string; caption?: string; credit?: string }): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("media.upload");
+    await updateMediaMeta(a.db, a.ctx.site, input);
+    await audit(a, "media.update", "media", input.id);
+    await purge(a);
+  }, "Saved");
+}
+
+// ---------- Taxonomy ----------
+
+export async function saveCategoryAction(input: z.input<typeof categoryInput>): Promise<ActionResult<string>> {
+  return run(async () => {
+    const a = await requireAdmin("taxonomy.manage");
+    const id = await saveCategory(a.db, a.ctx.site, input);
+    await audit(a, input.id ? "category.update" : "category.create", "category", id, { name: input.name });
+    await purge(a);
+    return id;
+  }, "Saved");
+}
+
+export async function deleteCategoryAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("taxonomy.manage");
+    const r = await deleteCategory(a.db, a.ctx.site, id);
+    await audit(a, "category.delete", "category", id, r);
+    await purge(a);
+  }, "Deleted");
+}
+
+export async function saveTagAction(input: z.input<typeof tagInput>): Promise<ActionResult<string>> {
+  return run(async () => {
+    const a = await requireAdmin("taxonomy.manage");
+    const id = await saveTag(a.db, a.ctx.site, input);
+    await audit(a, input.id ? "tag.update" : "tag.create", "tag", id, { name: input.name });
+    await purge(a);
+    return id;
+  }, "Saved");
+}
+
+export async function deleteTagAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("taxonomy.manage");
+    const r = await deleteTag(a.db, a.ctx.site, id);
+    await audit(a, "tag.delete", "tag", id, r);
+    await purge(a);
+  }, "Deleted");
+}
+
+export async function saveAuthorAction(input: z.input<typeof authorInput>): Promise<ActionResult<string>> {
+  return run(async () => {
+    const a = await requireAdmin("taxonomy.manage");
+    const id = await saveAuthor(a.db, a.ctx.site, input);
+    await audit(a, input.id ? "author.update" : "author.create", "author", id, { name: input.name });
+    await purge(a);
+    return id;
+  }, "Saved");
+}
+
+export async function deleteAuthorAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("taxonomy.manage");
+    const r = await deleteAuthor(a.db, a.ctx.site, id);
+    await audit(a, "author.delete", "author", id, r);
+    await purge(a);
+  }, "Deleted");
+}
+
+// ---------- Site ----------
+
+export async function saveHomepageAction(input: z.input<typeof homepageInput>): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("homepage.manage");
+    await saveHomepage(a.db, a.ctx.site, input);
+    await audit(a, "homepage.update", "homepage", null, { sections: input.sections.map((x) => ({ id: x.id, enabled: x.enabled })) });
+    await purge(a);
+  }, "Homepage updated");
+}
+
+export async function saveSettingsAction(input: z.input<typeof settingsInput>): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    const diff = await saveSettings(a.db, a.ctx.site, input);
+    await audit(a, "settings.update", "publication", a.ctx.publication.id, diff);
+    await purge(a);
+  }, "Settings saved");
+}
+
+export async function saveRedirectAction(input: z.input<typeof redirectInput>): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    const r = await saveRedirect(a.db, a.ctx.site, input);
+    await audit(a, "redirect.save", "redirect", null, r);
+    await purge(a);
+  }, "Redirect saved");
+}
+
+export async function deleteRedirectAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    const r = await deleteRedirect(a.db, a.ctx.site, id);
+    await audit(a, "redirect.delete", "redirect", id, r);
+    await purge(a);
+  }, "Deleted");
+}
+
+export async function listMediaAction(q?: string): Promise<ActionResult<{ id: string; storageKey: string; alt: string; caption: string | null; width: number | null; height: number | null; blurColor: string | null }[]>> {
+  return run(async () => {
+    const a = await requireAdmin("media.upload");
+    const { listMedia } = await import("@/data/admin/media");
+    const rows = await listMedia(a.db, a.ctx.site, { q, limit: 120 });
+    return rows.map((m) => ({ id: m.id, storageKey: m.storageKey, alt: m.alt, caption: m.caption, width: m.width, height: m.height, blurColor: m.blurColor }));
+  });
+}

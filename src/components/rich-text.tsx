@@ -63,6 +63,9 @@ function renderText(node: RichTextNode, key: number): ReactNode {
       case "strike":
         out = <s>{out}</s>;
         break;
+      case "underline":
+        out = <u>{out}</u>;
+        break;
       case "link": {
         const href = safeHref(mark.attrs?.href);
         if (href) {

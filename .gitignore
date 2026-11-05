@@ -50,3 +50,6 @@ cloudflare-env.d.ts
 .env
 .env*.local
 !.env.example
+
+# Locally uploaded media (production uses R2)
+/public/media/

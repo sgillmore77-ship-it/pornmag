@@ -21,6 +21,7 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
 import "./magazine.css";
+import "./admin.css";
 
 export const viewport: Viewport = {
   width: "device-width",
