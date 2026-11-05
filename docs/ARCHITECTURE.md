@@ -107,6 +107,17 @@ The visual design comes from the Claude Design handoff ("design system + homepag
 - **1A (done):** project setup, full schema, tenant-scoped data layer, auth (register, login, logout, reset, roles), configurable homepage, article pages, section indexes with pagination, metadata, JSON-LD, sitemap, robots, seed data, tests.
 - **1B (done):** admin dashboard, content list and editor (TipTap), SEO panel, workflow and scheduling, media library with uploads, categories/tags/authors, public tag pages, homepage manager (layout switch, ordering, picks), site settings (branding, type pairing, navigation, behaviour), redirects, activity log, per-site cache refresh.
 - **1C (done):** studios & creators admin; review fields (score out of 5 in half steps, badge, verdict, pros/cons, price, release year, sponsored link with disclosure); video fields (approved embed link, duration, studio, optional rating) with a click-to-play player; Review and VideoObject structured data; site search with type filters; related content weighted by shared studio/creator, then tags, then category.
-- **Next — 1D:** comments, public profiles, moderation.
+- **1D (done):** comments (threaded one level, edit for 15 minutes, delete, report), public reader profiles at `/u/<handle>`, saved stories, account page, "Report this page" (consent, age, copyright, legal), admin moderation queue with bulk actions, page reports with "take offline", People (roles, comment blocks), dashboard counts, comment moderation mode in Settings.
+- **Next — 1E:** ads, analytics, performance.
 
 Videos can only be published with a link from an approved provider (`src/lib/embeds.ts`). Add licensed partners there.
+
+## Community (1D)
+
+- **Story pages stay cached.** Comments, the Save button and the reader's identity load after the page arrives (a server action), so the cached HTML is the same for everyone.
+- **Privacy.** Readers comment under a per-publication handle; real names and emails are never shown publicly. Profiles are per publication, so one reader's identity on one magazine isn't visible on another. Profile pages are `noindex`.
+- **Moderation mode** (Settings → Comments): check every reader's first comment (default), check all, publish straight away, or off. Staff skip the queue. Comments with more than two links are always held.
+- **Automatic holds.** Three open reports, or one "involves a minor" report, take a comment down until a moderator decides.
+- **Limits.** 2,000 characters; one post every 15 seconds and five per 10 minutes per reader; no duplicate posts within 24 hours. IPs are stored only as a keyed hash.
+- **Roles.** Moderators handle comments and page reports and can block readers; only administrators change roles or block team members; a site always keeps one administrator. Editors can take a reported page offline.
+- **Later:** reply notifications by email (needs Resend), account deletion and data export (with the legal work).

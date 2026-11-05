@@ -18,6 +18,7 @@ export type SettingsState = {
   ageGateEnabled: boolean;
   adPreview: boolean;
   commentsEnabled: boolean;
+  commentModeration: "all" | "first" | "none" | "off";
   timeZone: string;
   nav: Nav[];
 };
@@ -122,6 +123,14 @@ export function SettingsForm({ initial, pairings }: { initial: SettingsState; pa
         <div className="panel-head"><h2>Behaviour</h2></div>
         <div className="panel-pad form-grid">
           <label className="check"><input type="checkbox" checked={v.ageGateEnabled} onChange={(e) => set("ageGateEnabled", e.target.checked)} />Show the “Adults only” screen on first visit <span className="hint" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 400 }}>(self-declaration, not verified age checks)</span></label>
+          <label className="f"><span>Comments</span>
+            <select value={v.commentModeration} onChange={(e) => set("commentModeration", e.target.value as SettingsState["commentModeration"])}>
+              <option value="first">Check each reader&apos;s first comment, then trust them (recommended)</option>
+              <option value="all">Check every comment before it appears</option>
+              <option value="none">Publish straight away; review reports afterwards</option>
+              <option value="off">Switch comments off everywhere</option>
+            </select>
+          </label>
           <label className="check"><input type="checkbox" checked={v.commentsEnabled} onChange={(e) => set("commentsEnabled", e.target.checked)} />Allow comments on new stories by default</label>
           <label className="check"><input type="checkbox" checked={v.adPreview} onChange={(e) => set("adPreview", e.target.checked)} />Show empty ad placeholders <span className="hint" style={{ fontSize: 12, color: "#9b1c1c", fontWeight: 400 }}>turn off before launch</span></label>
         </div>

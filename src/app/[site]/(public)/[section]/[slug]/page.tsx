@@ -14,6 +14,7 @@ import { absoluteUrl, articleJsonLd, breadcrumbJsonLd, contentMetadata, reviewJs
 import { embedSrc } from "@/lib/embeds";
 import { VideoPlayer } from "@/components/mag/video-player";
 import { ReviewBox } from "@/components/mag/review-box";
+import { Comments, CommunityProvider, ReportPage, SaveButton } from "@/components/mag/community";
 import { notFoundOrRedirect } from "@/lib/redirects";
 import { getSiteContext } from "@/lib/site-context";
 
@@ -54,7 +55,7 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
   const byline = item.authorDetails.map((a) => a.name).join(" & ");
 
   return (
-    <>
+    <CommunityProvider contentId={item.id} path={contentPath(item)}>
       <JsonLd
         data={[
           item.type === "review" ? reviewJsonLd(ctx, item) : item.type === "video" ? videoJsonLd(ctx, item) : articleJsonLd(ctx, item),
@@ -85,6 +86,9 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
             {byline && <>By {byline} · </>}
             {item.type === "video" && item.video?.durationSeconds ? formatDuration(item.video.durationSeconds) : `${item.readMinutes} min read`}
           </p>
+          <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
+            <SaveButton />
+          </div>
         </header>
 
         <figure className="wrap" style={{ marginTop: "clamp(28px, 3.6cqw, 52px)", maxWidth: 1312, marginInline: "auto" }}>
@@ -141,6 +145,8 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
                 ))}
               </ul>
             )}
+            <Comments />
+            <ReportPage />
           </div>
         </div>
       </article>
@@ -172,6 +178,6 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
           </li>
         </ol>
       </nav>
-    </>
+    </CommunityProvider>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageHead, StatusBadge, When } from "@/components/admin/bits";
 import { contentCounts, listContentAdmin, upcomingScheduled } from "@/data/admin/content";
 import { listActivity } from "@/data/admin/site";
+import { moderationCounts } from "@/data/admin/moderation";
 import { requireAdminPage } from "@/lib/admin";
 import { can } from "@/lib/permissions";
 
@@ -9,11 +10,13 @@ export default async function Dashboard() {
   const a = await requireAdminPage();
   const tz = a.ctx.publication.settings.timeZone;
   const mine = !can(a.actor, "content.edit.any");
-  const [counts, recent, scheduled, activity] = await Promise.all([
+  const moderator = can(a.actor, "comments.moderate");
+  const [counts, recent, scheduled, activity, mod] = await Promise.all([
     contentCounts(a.db, a.ctx.site),
     listContentAdmin(a.db, a.ctx.site, { onlyUserId: mine ? a.user.id : undefined }),
     upcomingScheduled(a.db, a.ctx.site),
     can(a.actor, "publication.manage") ? listActivity(a.db, a.ctx.site, 8) : Promise.resolve([]),
+    moderator ? moderationCounts(a.db, a.ctx.site) : Promise.resolve(null),
   ]);
 
   return (
@@ -37,6 +40,22 @@ export default async function Dashboard() {
           </Link>
         ))}
       </div>
+      {mod && (
+        <div className="stats" style={{ marginBottom: 24 }}>
+          <Link href="/admin/comments" className="stat">
+            <div className="n">{mod.pending}</div>
+            <div className="l">comments waiting</div>
+          </Link>
+          <Link href="/admin/comments?view=reported" className="stat">
+            <div className="n">{mod.reported}</div>
+            <div className="l">reported comments</div>
+          </Link>
+          <Link href="/admin/reports" className="stat">
+            <div className="n">{mod.contentReports}</div>
+            <div className="l">page reports</div>
+          </Link>
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 20 }}>
         <section className="panel">

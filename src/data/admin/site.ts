@@ -124,6 +124,7 @@ export const settingsInput = z.object({
   ageGateEnabled: z.boolean(),
   adPreview: z.boolean(),
   commentsEnabled: z.boolean(),
+  commentModeration: z.enum(["all", "first", "none", "off"]).default("first"),
   timeZone: z.string().max(60).refine((tz) => {
     try {
       new Intl.DateTimeFormat("en-GB", { timeZone: tz });
@@ -147,6 +148,7 @@ export async function saveSettings(db: Db, s: Site, raw: z.input<typeof settings
     ageGate: { ...pub.settings.ageGate, enabled: i.ageGateEnabled },
     ads: { ...pub.settings.ads, previewPlaceholders: i.adPreview },
     commentsEnabled: i.commentsEnabled,
+    commentModeration: i.commentModeration,
     timeZone: i.timeZone,
     nav: i.nav,
   };

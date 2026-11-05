@@ -132,6 +132,12 @@ export type PublicationTheme = {
 
 export type PublicationSettings = {
   commentsEnabled: boolean;
+  /**
+   * Which new comments wait for a moderator: "all", "first" (until a reader
+   * has one approved comment) or "none"; "off" closes comments site-wide.
+   * Defaults to "first". `commentsEnabled` is only the default for new stories.
+   */
+  commentModeration?: "all" | "first" | "none" | "off";
   /** Hook for age assurance; the provider is chosen before launch. */
   ageGate: { enabled: boolean; provider: string | null };
   locale: string;
@@ -259,9 +265,22 @@ export const memberships = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     role: memberRole("role").notNull().default("user"),
+    /**
+     * Public profile on this publication. Profiles are per publication, so a
+     * reader's identity on one magazine isn't exposed on another.
+     */
+    handle: text("handle"),
+    displayName: text("display_name"),
+    bio: text("bio"),
+    /** Set by a moderator: the reader can still sign in but not comment. */
+    commentsBlockedAt: timestamp("comments_blocked_at", { withTimezone: true }),
+    commentsBlockedReason: text("comments_blocked_reason"),
     createdAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.publicationId, t.userId] })],
+  (t) => [
+    primaryKey({ columns: [t.publicationId, t.userId] }),
+    uniqueIndex("memberships_pub_handle_uq").on(t.publicationId, sql`lower(${t.handle})`),
+  ],
 );
 
 // ---------------------------------------------------------------------------
@@ -685,7 +704,10 @@ export const commentReports = pgTable(
     }),
     createdAt: createdAt(),
   },
-  (t) => [index("comment_reports_pub_idx").on(t.publicationId, t.resolvedAt)],
+  (t) => [
+    index("comment_reports_pub_idx").on(t.publicationId, t.resolvedAt),
+    uniqueIndex("comment_reports_once_uq").on(t.commentId, t.reporterId),
+  ],
 );
 
 /** Reports about content itself (not comments), e.g. takedown requests. */
@@ -703,6 +725,8 @@ export const contentReports = pgTable(
     reporterEmail: text("reporter_email"),
     reason: text("reason").notNull(),
     details: text("details"),
+    /** Hashed, never the raw IP. */
+    ipHash: text("ip_hash"),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     resolvedBy: text("resolved_by").references(() => users.id, {
       onDelete: "set null",

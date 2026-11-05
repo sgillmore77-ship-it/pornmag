@@ -4,6 +4,7 @@ import { AdminNav, type AdminNavItem } from "@/components/admin/admin-nav";
 import { Wordmark } from "@/components/mag/wordmark";
 import { requireAdminPage } from "@/lib/admin";
 import { can } from "@/lib/permissions";
+import { moderationCounts } from "@/data/admin/moderation";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 // Per-user and always fresh.
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const a = await requireAdminPage();
+  const counts = can(a.actor, "comments.moderate") ? await moderationCounts(a.db, a.ctx.site) : { pending: 0, contentReports: 0 };
   const items: AdminNavItem[] = [
     { label: "Dashboard", href: "/admin" },
     ...(can(a.actor, "content.create") ? [{ label: "Content", href: "/admin/content", group: "Publish" }, { label: "Media", href: "/admin/media", group: "Publish" }] : []),
@@ -20,6 +22,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { label: "Tags", href: "/admin/tags", group: "Organise" },
           { label: "Authors", href: "/admin/authors", group: "Organise" },
           { label: "Studios & creators", href: "/admin/studios", group: "Organise" },
+        ]
+      : []),
+    ...(can(a.actor, "comments.moderate")
+      ? [
+          { label: `Comments${counts.pending ? ` (${counts.pending})` : ""}`, href: "/admin/comments", group: "Community" },
+          { label: `Reports${counts.contentReports ? ` (${counts.contentReports})` : ""}`, href: "/admin/reports", group: "Community" },
+          { label: "People", href: "/admin/people", group: "Community" },
         ]
       : []),
     ...(can(a.actor, "homepage.manage") ? [{ label: "Homepage", href: "/admin/homepage", group: "Site" }] : []),

@@ -420,3 +420,49 @@ html[data-age-ok] .agegate { display: none; }
 .pc-pro { color: #1c7a45; }
 .pc-con { color: #b3261e; }
 .review-cta { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+
+/* ---------- Reader community: save, comments, reports ---------- */
+.save-btn {
+  display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px;
+  border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer;
+  font-family: var(--fm); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.save-btn:hover { border-color: var(--ink); }
+.save-btn[aria-pressed="true"] { border-color: var(--brand); color: var(--brand-text); }
+.cmt { margin-top: clamp(48px, 5cqw, 72px); border-top: 2px solid var(--ink); padding-top: 18px; }
+.site .cmt-h { font-size: calc(clamp(28px, 2.6cqw, 36px) * var(--dsz)); margin: 0 0 20px; }
+.cmt-n { color: var(--muted); }
+.site .cmt-note { font-size: 16px; line-height: 1.55; color: var(--muted); }
+.site .cmt-note a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.cmt-form { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.cmt-input {
+  width: 100%; font: inherit; font-size: 16px; line-height: 1.5; padding: 12px 14px; resize: vertical;
+  background: var(--bg); color: var(--ink); border: 1.5px solid var(--line); border-radius: 0; outline: none;
+}
+.cmt-input:focus { border-color: var(--ink); }
+.field .cmt-input { margin-top: 6px; font-weight: 400; }
+.cmt-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.site .cmt-err { font-size: 15px; color: #c62828; }
+.cmt-list, .cmt-replies { list-style: none; padding: 0; margin: 0; }
+.cmt-list { margin-top: 28px; }
+.cmt-item { padding: 20px 0; border-top: 1px solid var(--line); }
+.cmt-replies { margin-top: 4px; padding-left: clamp(14px, 3cqw, 32px); border-left: 2px solid var(--line); }
+.cmt-item.is-reply { border-top: 0; padding: 14px 0 6px; }
+.cmt-item:target { background: color-mix(in srgb, var(--brand) 6%, transparent); }
+.cmt-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: var(--fm); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.site .cmt-author { color: var(--ink); font-weight: 600; letter-spacing: 0.04em; }
+.cmt-staff { font-size: 9px; padding: 2px 6px; border-color: var(--brand); color: var(--brand-text); }
+.cmt-pending { color: var(--brand-text); }
+.site .cmt-body { margin-top: 8px; font-size: 17px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.site .cmt-removed { font-size: 15px; font-style: italic; color: var(--muted); }
+.cmt-tools { display: flex; gap: 16px; margin-top: 10px; }
+.cmt-tools button { background: none; border: 0; padding: 0; cursor: pointer; font-family: var(--fm); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.cmt-tools button:hover { color: var(--ink); }
+.cmt-rules { margin-top: 28px; text-transform: none; letter-spacing: 0.02em; }
+.cmt-report { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; padding: 16px; background: var(--surface); }
+.cmt-report fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
+.cmt-report fieldset label { display: flex; gap: 10px; align-items: center; }
+.cmt-report .btn { align-self: flex-start; }
+.report-page { margin-top: 40px; }
+.report-page summary { cursor: pointer; width: fit-content; }
+.report-page summary:hover { color: var(--ink); }

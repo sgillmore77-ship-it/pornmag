@@ -107,3 +107,13 @@
 .chips-input .chip { display: inline-flex; gap: 6px; align-items: center; font-size: 11px; }
 .chips-input .chip button { border: 0; background: none; cursor: pointer; color: var(--muted); padding: 0; font-size: 14px; line-height: 1; }
 .chips-input input { border: 0 !important; min-height: 28px !important; padding: 2px 4px !important; flex: 1; min-width: 120px; }
+
+/* Moderation */
+.mod-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.mod-item { display: flex; gap: 14px; align-items: flex-start; padding: 16px; }
+.mod-item.is-urgent { border-left: 4px solid #c62828; }
+.mod-item > input { margin-top: 4px; }
+.mod-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+.mod-meta strong { color: var(--ink); }
+.mod-body { margin-top: 8px; font-size: 15px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mod-reports { margin-top: 8px; font-size: 13px; color: #9b1c1c; }

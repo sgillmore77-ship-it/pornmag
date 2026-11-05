@@ -23,6 +23,16 @@ import type { z } from "zod";
 import type { homepageInput, redirectInput, settingsInput } from "@/data/admin/site";
 import type { authorInput, categoryInput, tagInput } from "@/data/admin/taxonomy";
 import { putObject } from "@/lib/storage";
+import {
+  moderateComments,
+  removeAllComments,
+  resolveContentReport,
+  setCommentBlock,
+  setRole,
+  unpublishContent,
+  type ModAction,
+} from "@/data/admin/moderation";
+import type { Role } from "@/lib/permissions";
 
 // ---------- Content ----------
 
@@ -223,4 +233,50 @@ export async function deleteEntityAction(id: string): Promise<ActionResult> {
     await audit(a, "entity.delete", "entity", id, r);
     await purge(a);
   }, "Deleted");
+}
+
+// ---------- Community ----------
+
+export async function moderateCommentsAction(ids: string[], action: ModAction): Promise<ActionResult<number>> {
+  return run(async () => {
+    const a = await requireAdmin("comments.moderate");
+    if (!["approve", "remove", "spam", "dismiss"].includes(action)) throw new Error("Unknown action");
+    const n = await moderateComments(a.db, a.ctx.site, a.actor, ids.map(String), action);
+    await audit(a, `comment.${action}`, "comment", ids.length === 1 ? String(ids[0]) : null, { count: n });
+    return n;
+  });
+}
+
+export async function setCommentBlockAction(userId: string, blocked: boolean, reason?: string, removeAll?: boolean): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("comments.moderate");
+    await setCommentBlock(a.db, a.ctx.site, a.actor, String(userId), !!blocked, reason ? String(reason) : undefined);
+    const removed = blocked && removeAll ? await removeAllComments(a.db, a.ctx.site, a.actor, String(userId)) : 0;
+    await audit(a, blocked ? "member.block" : "member.unblock", "user", String(userId), { reason, removed });
+  }, blocked ? "Blocked from commenting" : "Unblocked");
+}
+
+export async function setRoleAction(userId: string, role: Role): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    await setRole(a.db, a.ctx.site, a.actor, String(userId), role);
+    await audit(a, "member.role", "user", String(userId), { role });
+  }, "Role updated");
+}
+
+export async function resolveReportAction(id: string, reopen = false): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("comments.moderate");
+    await resolveContentReport(a.db, a.ctx.site, a.actor, String(id), !!reopen);
+    await audit(a, reopen ? "report.reopen" : "report.resolve", "content_report", String(id));
+  }, reopen ? "Reopened" : "Marked as resolved");
+}
+
+export async function unpublishReportedAction(contentId: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("content.publish");
+    await unpublishContent(a.db, a.ctx.site, a.actor, String(contentId));
+    await audit(a, "content.unpublish", "content", String(contentId), { via: "report" });
+    await purge(a);
+  }, "Taken offline (moved to drafts)");
 }

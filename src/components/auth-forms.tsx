@@ -47,7 +47,8 @@ function ErrorText({ error }: { error: string | null }) {
 
 /** Only allow same-site relative redirects after login. */
 function safeNext(next: string | null): string {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/account";
+  // Backslashes are treated as slashes by browsers, so "/\\evil.com" is off-site.
+  return next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : "/account";
 }
 
 export function LoginForm() {
@@ -89,6 +90,7 @@ export function LoginForm() {
 
 export function RegisterForm() {
   const router = useRouter();
+  const params = useSearchParams();
   const { error, pending, run } = useSubmit();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -102,14 +104,14 @@ export function RegisterForm() {
       }),
     );
     if (ok) {
-      router.push("/account");
+      router.push(safeNext(params.get("next")));
       router.refresh();
     }
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      <Field label="Display name">
+      <Field label="Your name (never shown publicly)">
         <input name="name" autoComplete="nickname" required maxLength={50} className={input} />
       </Field>
       <Field label="Email">

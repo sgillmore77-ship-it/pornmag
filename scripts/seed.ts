@@ -12,7 +12,7 @@
  * design's striped blocks until real photos are uploaded.
  */
 import "dotenv/config";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { createNodeDb, type Db } from "../src/db/client";
 import * as t from "../src/db/schema";
 import type { RichTextDoc, RichTextNode } from "../src/db/schema";
@@ -304,7 +304,31 @@ export async function seed(db: Db, opts: { layout?: "feed" | "issue" } = {}) {
     (["header_leaderboard", "in_content", "sidebar", "between_grid", "footer"] as const).map((slot) => ({ publicationId: pub.id, slot, name: slot.replace(/_/g, " ") })),
   );
 
+  await seedCommunity(db, pub.id, id("Velour Hours", "review"));
+
   return { publicationId: pub.id, contentIds: [...idByTitle.values()] };
+}
+
+/** Sample readers and a short comment thread (these accounts can't sign in). */
+async function seedCommunity(db: Db, publicationId: string, contentId: string) {
+  const readers = [
+    { id: "seed-reader-1", name: "Sample Reader One", handle: "night_owl", displayName: "Night Owl", bio: "Sample profile. Watches everything twice." },
+    { id: "seed-reader-2", name: "Sample Reader Two", handle: "tungsten", displayName: null, bio: null },
+    { id: "seed-reader-3", name: "Sample Reader Three", handle: "first_timer", displayName: null, bio: null },
+  ];
+  await db.delete(t.users).where(inArray(t.users.id, readers.map((r) => r.id)));
+  await db.insert(t.users).values(readers.map((r) => ({ id: r.id, name: r.name, email: `${r.id}@example.invalid` })));
+  await db.insert(t.memberships).values(readers.map((r) => ({ publicationId, userId: r.id, role: "user" as const, handle: r.handle, displayName: r.displayName, bio: r.bio })));
+  const at = (minsAgo: number) => new Date(Date.now() - minsAgo * 60_000);
+  const [top] = await db
+    .insert(t.comments)
+    .values({ publicationId, contentId, userId: "seed-reader-1", body: "The lighting in the second half is unreal. Sample comment, replace before launch.", status: "approved", createdAt: at(180), updatedAt: at(180) })
+    .returning();
+  await db.insert(t.comments).values([
+    { publicationId, contentId, userId: "seed-reader-2", parentId: top.id, body: "Agreed — the tungsten practicals do a lot of work.", status: "approved", createdAt: at(120), updatedAt: at(120) },
+    { publicationId, contentId, userId: "seed-reader-2", body: "Slow first act is fair, but it pays off.", status: "approved", createdAt: at(60), updatedAt: at(60) },
+    { publicationId, contentId, userId: "seed-reader-3", body: "First comment here, waiting for a moderator. Sample.", status: "pending", createdAt: at(10), updatedAt: at(10) },
+  ]);
 }
 
 async function createAdmin(db: Db, publicationId: string) {
