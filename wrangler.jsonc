@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pornmag",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+
+  // Fill these in once the Cloudflare account exists (see docs/DEPLOYMENT.md).
+  "hyperdrive": [
+    { "binding": "HYPERDRIVE", "id": "REPLACE_WITH_HYPERDRIVE_ID", "localConnectionString": "postgres://postgres:localdev@localhost:5432/pornmag" }
+  ],
+  "r2_buckets": [
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "pornmag-cache" },
+    { "binding": "MEDIA_BUCKET", "bucket_name": "pornmag-media" }
+  ],
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "pornmag" }]
+}
