@@ -10,7 +10,10 @@ import { ShareBar } from "@/components/share-bar";
 import { getDb } from "@/db/client";
 import { contentPath, getPublishedBySlug, listRelated, SECTION_FOR_TYPE, TYPE_FOR_SECTION } from "@/data/content";
 import { formatDate, formatDuration } from "@/lib/format";
-import { absoluteUrl, articleJsonLd, breadcrumbJsonLd, contentMetadata } from "@/lib/seo";
+import { absoluteUrl, articleJsonLd, breadcrumbJsonLd, contentMetadata, reviewJsonLd, videoJsonLd } from "@/lib/seo";
+import { embedSrc } from "@/lib/embeds";
+import { VideoPlayer } from "@/components/mag/video-player";
+import { ReviewBox } from "@/components/mag/review-box";
 import { notFoundOrRedirect } from "@/lib/redirects";
 import { getSiteContext } from "@/lib/site-context";
 
@@ -52,7 +55,12 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
 
   return (
     <>
-      <JsonLd data={[articleJsonLd(ctx, item), breadcrumbJsonLd(ctx, crumbs)]} />
+      <JsonLd
+        data={[
+          item.type === "review" ? reviewJsonLd(ctx, item) : item.type === "video" ? videoJsonLd(ctx, item) : articleJsonLd(ctx, item),
+          breadcrumbJsonLd(ctx, crumbs),
+        ].filter((x): x is Record<string, unknown> => !!x)}
+      />
       <article>
         <header className="wrap" style={{ paddingTop: "clamp(28px, 4.4cqw, 72px)", maxWidth: 1100, marginInline: "auto", textAlign: "center" }}>
           <div className="row-kicker label-mono" style={{ justifyContent: "center", gap: 14 }}>
@@ -80,9 +88,22 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
         </header>
 
         <figure className="wrap" style={{ marginTop: "clamp(28px, 3.6cqw, 52px)", maxWidth: 1312, marginInline: "auto" }}>
-          <Media image={item.heroImage} ratio="16/9" sizes="(min-width: 1312px) 1184px, 100vw" priority>
-            {item.type === "video" && <span className="play lg" />}
-          </Media>
+          {item.type === "video" && item.videoFull?.embedUrl && embedSrc(item.videoFull.provider, item.videoFull.embedUrl) ? (
+            <VideoPlayer src={embedSrc(item.videoFull.provider, item.videoFull.embedUrl)!} title={item.title}>
+              <Media image={item.heroImage} ratio="16/9" sizes="(min-width: 1312px) 1184px, 100vw" priority>
+                <span className="play lg" />
+                {item.videoFull.durationSeconds ? (
+                  <span className="dur" style={{ right: 12, bottom: 12, fontSize: 12, padding: "4px 8px" }}>
+                    {formatDuration(item.videoFull.durationSeconds)}
+                  </span>
+                ) : null}
+              </Media>
+            </VideoPlayer>
+          ) : (
+            <Media image={item.heroImage} ratio="16/9" sizes="(min-width: 1312px) 1184px, 100vw" priority>
+              {item.type === "video" && <span className="play lg" />}
+            </Media>
+          )}
           {item.heroImage && (item.heroImage.caption || item.heroImage.credit) && !item.heroImage.storageKey.startsWith("placeholder:") && (
             <figcaption className="meta" style={{ marginTop: 10, textTransform: "none", letterSpacing: "0.04em" }}>
               {item.heroImage.caption} {item.heroImage.credit}
@@ -101,6 +122,7 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
                 {item.review.verdict}
               </p>
             )}
+            {item.type === "review" && item.reviewFull && <ReviewBox item={item} />}
           </div>
         )}
 

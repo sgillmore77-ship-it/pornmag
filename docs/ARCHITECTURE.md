@@ -31,7 +31,7 @@ This records the important decisions and the reasons for them. Update it when a 
 - **Rich text** is stored as the editor's JSON (TipTap/ProseMirror) and rendered on the server by `src/components/rich-text.tsx`. No raw HTML is ever injected, links are restricted to http(s)/mailto/relative, and embeds only render from the allowlist in `src/lib/embeds.ts`.
 - **URLs:** `/features/<slug>`, `/reviews/<slug>`, `/videos/<slug>`, `/news/<slug>`. Slugs are unique per publication. Section indexes paginate as `/reviews/page/2`.
 - **Related content:** editor-chosen links first, then shared tags (weighted ×2), then same category, then newest.
-- **Search:** `search_vector` is a generated, weighted `tsvector` column (title > standfirst > body) with a GIN index. The search UI comes in 1C behind a `SearchProvider` interface, so Meilisearch or Algolia can replace it later.
+- **Search:** `search_vector` is a generated, weighted `tsvector` column (title > standfirst > body) with a GIN index. `/search` uses it through the `SearchProvider` interface in `src/lib/search/` (prefix matching, ranked, tenant-scoped, published only), so Meilisearch or Algolia can replace it later without touching pages.
 
 ## Caching and performance
 
@@ -49,7 +49,7 @@ This records the important decisions and the reasons for them. Update it when a 
 - Server-rendered HTML with one `<h1>` per page and semantic landmarks.
 - Per-item SEO title, meta description, canonical URL, OG image and index/noindex. Defaults fall back to the title, standfirst and hero image.
 - Canonicals always point at the publication's primary domain.
-- JSON-LD: `NewsMediaOrganization`, `WebSite`, `Article`/`NewsArticle`, `BreadcrumbList`. **Review** markup is added in 1C, once reviewed items carry real details, so we never emit misleading schema.
+- JSON-LD: `NewsMediaOrganization`, `WebSite`, `Article`/`NewsArticle`, `BreadcrumbList`. `Review` (rating 0–5; the item reviewed is a WebSite/Product/Service when the subject is one, otherwise the release credited to its studio or creator) and `VideoObject` (only when there is a real thumbnail and an approved embed).
 - The sitemap lists only live, indexable content that is its own canonical. Preview hosts (`*.workers.dev`, http) are disallowed in robots.txt.
 - Tag pages default to `noindex` until an editor opts in. Categories only get indexed pages once they have enough content (1B).
 
@@ -106,4 +106,7 @@ The visual design comes from the Claude Design handoff ("design system + homepag
 - **Design system applied:** both homepage directions, article, review, listing and category pages, account pages, age gate, mobile menu.
 - **1A (done):** project setup, full schema, tenant-scoped data layer, auth (register, login, logout, reset, roles), configurable homepage, article pages, section indexes with pagination, metadata, JSON-LD, sitemap, robots, seed data, tests.
 - **1B (done):** admin dashboard, content list and editor (TipTap), SEO panel, workflow and scheduling, media library with uploads, categories/tags/authors, public tag pages, homepage manager (layout switch, ordering, picks), site settings (branding, type pairing, navigation, behaviour), redirects, activity log, per-site cache refresh.
-- **Next — 1C:** review and video fields in the editor, video pages with licensed embeds, Review structured data, site search, and smarter related content.
+- **1C (done):** studios & creators admin; review fields (score out of 5 in half steps, badge, verdict, pros/cons, price, release year, sponsored link with disclosure); video fields (approved embed link, duration, studio, optional rating) with a click-to-play player; Review and VideoObject structured data; site search with type filters; related content weighted by shared studio/creator, then tags, then category.
+- **Next — 1D:** comments, public profiles, moderation.
+
+Videos can only be published with a link from an approved provider (`src/lib/embeds.ts`). Add licensed partners there.

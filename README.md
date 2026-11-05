@@ -3,7 +3,7 @@
 An editorial publishing platform for an adult culture and entertainment magazine, built so that it can later host many independent publications (multi-tenant SaaS).
 
 - **Stack:** Next.js 16, TypeScript, Tailwind CSS 4, PostgreSQL (Supabase) with Drizzle ORM, Better Auth, deployed to Cloudflare Workers.
-- **Status:** Phases 1A and 1B are complete: the public magazine (Claude Design system, two homepage directions) and the admin CMS at `/admin`. See docs/ARCHITECTURE.md.
+- **Status:** Phases 1A–1C are complete: the public magazine (Claude Design system, two homepage directions), the admin CMS at `/admin`, reviews, videos and site search. See docs/ARCHITECTURE.md.
 
 ## Docs
 

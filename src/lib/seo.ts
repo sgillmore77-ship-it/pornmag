@@ -70,10 +70,7 @@ export function websiteJsonLd(ctx: SiteContext): JsonLd {
   };
 }
 
-/**
- * Article structured data. Reviews get Review markup only in Phase 1C, once
- * the reviewed item's details exist, so we never emit half-true schema.
- */
+/** Article structured data (features and news; reviews and videos add their own types). */
 export function articleJsonLd(ctx: SiteContext, item: ContentPage): JsonLd {
   const image = shareable(item.heroImage) ?? shareable(item.ogImage);
   return {
@@ -105,5 +102,62 @@ export function breadcrumbJsonLd(ctx: SiteContext, crumbs: { name: string; path:
       name: c.name,
       item: absoluteUrl(ctx, c.path),
     })),
+  };
+}
+
+const ENTITY_TYPE: Record<string, string> = { website: "WebSite", product: "Product", service: "Service" };
+
+/**
+ * Review markup for reviews with a score. What's reviewed is described
+ * honestly: a website, product or service when the review's subject is one;
+ * otherwise the release itself, credited to its studio or creator.
+ */
+export function reviewJsonLd(ctx: SiteContext, item: ContentPage): JsonLd | null {
+  if (item.type !== "review" || !item.review) return null;
+  const subject = item.reviewFull?.subject ?? null;
+  const itemReviewed =
+    subject && ENTITY_TYPE[subject.kind]
+      ? { "@type": ENTITY_TYPE[subject.kind], name: subject.name, url: subject.websiteUrl ?? undefined }
+      : {
+          "@type": "CreativeWork",
+          name: item.title,
+          dateCreated: item.review.releaseYear ? String(item.review.releaseYear) : undefined,
+          creator: subject ? { "@type": subject.kind === "creator" ? "Person" : "Organization", name: subject.name } : undefined,
+        };
+  return {
+    "@context": "https://schema.org",
+    "@type": "Review",
+    name: item.title,
+    url: absoluteUrl(ctx, contentPath(item)),
+    datePublished: item.publishedAt.toISOString(),
+    author: item.authorDetails.map((a) => ({ "@type": "Person", name: a.name })),
+    publisher: { "@id": `${ctx.origin}/#organization` },
+    reviewBody: item.review.verdict ?? undefined,
+    reviewRating: { "@type": "Rating", ratingValue: item.review.score, bestRating: item.review.scoreMax, worstRating: 0 },
+    itemReviewed,
+  };
+}
+
+function isoDuration(seconds: number) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `PT${h ? `${h}H` : ""}${m ? `${m}M` : ""}${s || (!h && !m) ? `${s}S` : ""}`;
+}
+
+/** VideoObject only when there is a real thumbnail and an embed: both are required. */
+export function videoJsonLd(ctx: SiteContext, item: ContentPage): JsonLd | null {
+  const thumb = shareable(item.heroImage) ?? shareable(item.ogImage);
+  if (item.type !== "video" || !item.videoFull?.embedUrl || !thumb) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: item.title,
+    description: item.standfirst ?? item.title,
+    thumbnailUrl: [absoluteMedia(ctx, thumb.storageKey)],
+    uploadDate: item.publishedAt.toISOString(),
+    duration: item.videoFull.durationSeconds ? isoDuration(item.videoFull.durationSeconds) : undefined,
+    embedUrl: item.videoFull.embedUrl,
+    publisher: { "@id": `${ctx.origin}/#organization` },
   };
 }

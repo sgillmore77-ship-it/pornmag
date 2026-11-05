@@ -12,6 +12,51 @@ type Option = { id: string; name: string };
 type Status = "draft" | "scheduled" | "published" | "archived";
 type CType = "article" | "review" | "video" | "news";
 
+export type ReviewState = {
+  score: string;
+  badge: string;
+  verdict: string;
+  pros: string[];
+  cons: string[];
+  subjectEntityId: string;
+  releaseYear: string;
+  pricing: string;
+  affiliateUrl: string;
+};
+export type VideoState = { url: string; duration: string; studioEntityId: string; score: string };
+
+export const EMPTY_REVIEW: ReviewState = { score: "", badge: "", verdict: "", pros: [], cons: [], subjectEntityId: "", releaseYear: "", pricing: "", affiliateUrl: "" };
+export const EMPTY_VIDEO: VideoState = { url: "", duration: "", studioEntityId: "", score: "" };
+
+/** "1:02:05" or "32:10" → seconds. */
+function parseDuration(v: string): number | null {
+  if (!v.trim()) return null;
+  const parts = v.trim().split(":").map((x) => Number(x));
+  if (parts.some((n) => !Number.isFinite(n) || n < 0)) return NaN;
+  return parts.reduce((acc, n) => acc * 60 + n, 0);
+}
+
+function ListEditor({ label, value, onChange, placeholder }: { label: string; value: string[]; onChange: (v: string[]) => void; placeholder: string }) {
+  return (
+    <div className="f">
+      <span>{label}</span>
+      {value.map((item, i) => (
+        <div key={i} className="toolbar">
+          <input className="inp" type="text" value={item} maxLength={200} onChange={(e) => onChange(value.map((x, k) => (k === i ? e.target.value : x)))} aria-label={`${label} ${i + 1}`} style={{ flex: 1 }} />
+          <button type="button" className="btn btn-sm" onClick={() => onChange(value.filter((_, k) => k !== i))} aria-label={`Remove ${label} ${i + 1}`}>
+            ×
+          </button>
+        </div>
+      ))}
+      {value.length < 10 && (
+        <button type="button" className="btn btn-outline btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => onChange([...value, ""])}>
+          + {placeholder}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export type EditorInitial = {
   id: string | null;
   type: CType;
@@ -30,6 +75,8 @@ export type EditorInitial = {
   related: Option[];
   isFeatured: boolean;
   commentsEnabled: boolean;
+  review: ReviewState;
+  video: VideoState;
   seoTitle: string;
   metaDescription: string;
   canonicalUrl: string;
@@ -147,6 +194,7 @@ export function ContentEditor({
   authors,
   tagSuggestions,
   relatable,
+  entities,
   canPublish,
   canDelete,
   origin,
@@ -157,6 +205,7 @@ export function ContentEditor({
   authors: Option[];
   tagSuggestions: string[];
   relatable: Option[];
+  entities: (Option & { kind: string })[];
   canPublish: boolean;
   canDelete: boolean;
   origin: string;
@@ -219,6 +268,29 @@ export function ContentEditor({
         metaDescription: v.metaDescription,
         canonicalUrl: v.canonicalUrl,
         robotsIndex: v.robotsIndex,
+        review:
+          v.type === "review"
+            ? {
+                score: v.review.score === "" ? (undefined as unknown as number) : Number(v.review.score),
+                badge: v.review.badge,
+                verdict: v.review.verdict,
+                pros: v.review.pros.map((x) => x.trim()).filter(Boolean),
+                cons: v.review.cons.map((x) => x.trim()).filter(Boolean),
+                subjectEntityId: v.review.subjectEntityId,
+                releaseYear: v.review.releaseYear ? Number(v.review.releaseYear) : null,
+                pricing: v.review.pricing,
+                affiliateUrl: v.review.affiliateUrl,
+              }
+            : undefined,
+        video:
+          v.type === "video"
+            ? {
+                url: v.video.url,
+                durationSeconds: parseDuration(v.video.duration),
+                studioEntityId: v.video.studioEntityId,
+                score: v.video.score === "" ? null : Number(v.video.score),
+              }
+            : undefined,
       });
       if (!r.ok) {
         setNotice({ ok: false, text: r.error });
@@ -252,6 +324,136 @@ export function ContentEditor({
           <AutoGrow className="title-input" value={v.title} placeholder="Headline" aria-label="Headline" maxLength={200} onChange={(e) => set("title", e.target.value.replace(/\n/g, " "))} />
           <AutoGrow className="standfirst-input" value={v.standfirst} placeholder="Standfirst: one or two sentences that sell the story" aria-label="Standfirst" maxLength={600} onChange={(e) => set("standfirst", e.target.value)} />
         </div>
+        {v.type === "review" && (
+          <section className="panel">
+            <div className="panel-head">
+              <h2>Review</h2>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>Scored out of 5, in half steps</span>
+            </div>
+            <div className="panel-pad form-grid">
+              <div className="form-2">
+                <label className="f">
+                  <span>Score</span>
+                  <select value={v.review.score} onChange={(e) => set("review", { ...v.review, score: e.target.value })}>
+                    <option value="">Choose…</option>
+                    {Array.from({ length: 11 }, (_, i) => (10 - i) / 2).map((n) => (
+                      <option key={n} value={String(n)}>
+                        {n.toFixed(1)} {"★".repeat(Math.floor(n))}
+                        {n % 1 ? "½" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="f">
+                  <span>
+                    Label <span className="hint">optional</span>
+                  </span>
+                  <input type="text" list="review-badges" value={v.review.badge} maxLength={40} placeholder="Best New Release" onChange={(e) => set("review", { ...v.review, badge: e.target.value })} />
+                  <datalist id="review-badges">
+                    <option value="Best New Release" />
+                    <option value="Editor's Choice" />
+                    <option value="Staff Pick" />
+                  </datalist>
+                </label>
+              </div>
+              <label className="f">
+                <span>
+                  Verdict <span className="hint">one or two sentences, shown on cards and at the top of the review</span>
+                </span>
+                <textarea value={v.review.verdict} maxLength={400} onChange={(e) => set("review", { ...v.review, verdict: e.target.value })} />
+              </label>
+              <div className="form-2">
+                <ListEditor label="Pros" placeholder="Add a pro" value={v.review.pros} onChange={(pros) => set("review", { ...v.review, pros })} />
+                <ListEditor label="Cons" placeholder="Add a con" value={v.review.cons} onChange={(cons) => set("review", { ...v.review, cons })} />
+              </div>
+              <div className="form-2">
+                <label className="f">
+                  <span>Studio / site reviewed</span>
+                  <select value={v.review.subjectEntityId} onChange={(e) => set("review", { ...v.review, subjectEntityId: e.target.value })}>
+                    <option value="">None</option>
+                    {entities.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name} ({x.kind})
+                      </option>
+                    ))}
+                  </select>
+                  <span className="hint">
+                    Missing? Add it in <Link href="/admin/studios">Studios &amp; creators</Link>.
+                  </span>
+                </label>
+                <label className="f">
+                  <span>Release year</span>
+                  <input type="number" min={1900} max={2100} value={v.review.releaseYear} onChange={(e) => set("review", { ...v.review, releaseYear: e.target.value })} />
+                </label>
+              </div>
+              <div className="form-2">
+                <label className="f">
+                  <span>Pricing</span>
+                  <input type="text" value={v.review.pricing} maxLength={120} placeholder="From $9.99/month" onChange={(e) => set("review", { ...v.review, pricing: e.target.value })} />
+                </label>
+                <label className="f">
+                  <span>
+                    Affiliate link <span className="hint">marked sponsored for search engines</span>
+                  </span>
+                  <input type="url" value={v.review.affiliateUrl} maxLength={1000} placeholder="https://…" onChange={(e) => set("review", { ...v.review, affiliateUrl: e.target.value })} />
+                </label>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {v.type === "video" && (
+          <section className="panel">
+            <div className="panel-head">
+              <h2>Video</h2>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>Embedded from an approved provider</span>
+            </div>
+            <div className="panel-pad form-grid">
+              <label className="f">
+                <span>
+                  Video link <span className="hint">paste the normal page URL; it&apos;s converted to an embed</span>
+                </span>
+                <input type="url" value={v.video.url} maxLength={500} placeholder="https://…" onChange={(e) => set("video", { ...v.video, url: e.target.value })} />
+              </label>
+              <div className="form-2">
+                <label className="f">
+                  <span>
+                    Duration <span className="hint">e.g. 32:10</span>
+                  </span>
+                  <input type="text" value={v.video.duration} maxLength={10} placeholder="mm:ss" onChange={(e) => set("video", { ...v.video, duration: e.target.value })} />
+                </label>
+                <label className="f">
+                  <span>Studio / creator</span>
+                  <select value={v.video.studioEntityId} onChange={(e) => set("video", { ...v.video, studioEntityId: e.target.value })}>
+                    <option value="">None</option>
+                    {entities.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name} ({x.kind})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="f">
+                  <span>
+                    Rating <span className="hint">optional</span>
+                  </span>
+                  <select value={v.video.score} onChange={(e) => set("video", { ...v.video, score: e.target.value })}>
+                    <option value="">No rating</option>
+                    {Array.from({ length: 11 }, (_, i) => (10 - i) / 2).map((n) => (
+                      <option key={n} value={String(n)}>
+                        {n.toFixed(1)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <span className="hint" style={{ fontSize: 12, color: "var(--muted)" }}>
+                The hero image is used as the video&apos;s poster and thumbnail.
+              </span>
+            </div>
+          </section>
+        )}
+
         <RichEditor
           initial={initial.body}
           onChange={(d) => {

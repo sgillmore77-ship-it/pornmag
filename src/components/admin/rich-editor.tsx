@@ -8,7 +8,7 @@ import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/r
 import StarterKit from "@tiptap/starter-kit";
 import { useState } from "react";
 import type { RichTextDoc } from "@/db/schema";
-import { embedSrc } from "@/lib/embeds";
+import { toEmbed } from "@/lib/embeds";
 import { mediaUrl } from "@/lib/media";
 import { MediaPicker } from "./media-picker";
 
@@ -58,30 +58,6 @@ const MediaImageNode = Image.extend({
     };
   },
 });
-
-/** Turns a normal YouTube/Vimeo page URL into an approved embed URL. */
-export function toEmbed(input: string): { provider: string; url: string } | null {
-  try {
-    const u = new URL(input.trim());
-    const host = u.hostname.replace(/^www\./, "");
-    if (host === "youtube.com" || host === "m.youtube.com") {
-      const id = u.searchParams.get("v") ?? (u.pathname.startsWith("/embed/") ? u.pathname.split("/")[2] : null);
-      if (id && /^[\w-]{6,20}$/.test(id)) return { provider: "youtube", url: `https://www.youtube-nocookie.com/embed/${id}` };
-    }
-    if (host === "youtu.be") {
-      const id = u.pathname.slice(1);
-      if (/^[\w-]{6,20}$/.test(id)) return { provider: "youtube", url: `https://www.youtube-nocookie.com/embed/${id}` };
-    }
-    if (host === "vimeo.com" || host === "player.vimeo.com") {
-      const id = u.pathname.split("/").filter(Boolean).pop();
-      if (id && /^\d+$/.test(id)) return { provider: "vimeo", url: `https://player.vimeo.com/video/${id}` };
-    }
-    for (const provider of ["youtube", "vimeo"]) if (embedSrc(provider, input)) return { provider, url: input };
-  } catch {
-    /* not a URL */
-  }
-  return null;
-}
 
 function B({ on, label, title, onClick, disabled }: { on?: boolean; label: string; title: string; onClick: () => void; disabled?: boolean }) {
   return (

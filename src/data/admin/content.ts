@@ -5,13 +5,18 @@ import {
   authors,
   categories,
   contentAuthors,
+  contentEntities,
   contentItems,
   contentTags,
+  entities,
   media,
   relatedContent,
+  reviewDetails,
   tags,
+  videoDetails,
   type RichTextDoc,
 } from "@/db/schema";
+import { embedSrc, toEmbed } from "@/lib/embeds";
 import { docToText } from "@/lib/doc-text";
 import { can, ForbiddenError, type Actor } from "@/lib/permissions";
 import type { Site } from "../site";
@@ -35,7 +40,7 @@ export function slugify(s: string): string {
 async function assertOwned(
   db: Db,
   s: Site,
-  table: typeof media | typeof categories | typeof authors | typeof contentItems | typeof tags,
+  table: typeof media | typeof categories | typeof authors | typeof contentItems | typeof tags | typeof entities,
   ids: (string | null | undefined)[],
   label: string,
 ) {
@@ -146,7 +151,7 @@ export async function getContentForEdit(db: Db, s: Site, id: string) {
     .where(and(eq(contentItems.publicationId, s.publicationId), eq(contentItems.id, id)))
     .limit(1);
   if (!item) return null;
-  const [authorRows, tagRows, relatedRows] = await Promise.all([
+  const [authorRows, tagRows, relatedRows, [review], [video]] = await Promise.all([
     db.select({ id: contentAuthors.authorId }).from(contentAuthors).where(eq(contentAuthors.contentId, id)).orderBy(asc(contentAuthors.position)),
     db.select({ name: tags.name }).from(contentTags).innerJoin(tags, eq(tags.id, contentTags.tagId)).where(eq(contentTags.contentId, id)).orderBy(asc(tags.name)),
     db
@@ -155,8 +160,17 @@ export async function getContentForEdit(db: Db, s: Site, id: string) {
       .innerJoin(contentItems, eq(contentItems.id, relatedContent.relatedId))
       .where(eq(relatedContent.contentId, id))
       .orderBy(asc(relatedContent.position)),
+    db.select().from(reviewDetails).where(eq(reviewDetails.contentId, id)),
+    db.select().from(videoDetails).where(eq(videoDetails.contentId, id)),
   ]);
-  return { ...item, authorIds: authorRows.map((a) => a.id), tagNames: tagRows.map((t) => t.name), related: relatedRows };
+  return {
+    ...item,
+    authorIds: authorRows.map((a) => a.id),
+    tagNames: tagRows.map((t) => t.name),
+    related: relatedRows,
+    review: review ? { ...review, score: Number(review.score) } : null,
+    video: video ?? null,
+  };
 }
 
 /** May this actor edit this item? Authors may only edit their own, and never published work. */
@@ -233,6 +247,44 @@ export const contentInput = z.object({
     .transform((v) => (v ? v : null))
     .refine((v) => v === null || /^https?:\/\//.test(v), "must start with http:// or https://"),
   robotsIndex: z.boolean().default(true),
+  review: z
+    .object({
+      score: z.coerce
+        .number()
+        .min(0)
+        .max(5)
+        .refine((n) => Number.isInteger(n * 2), "must be in half steps (e.g. 3.5)"),
+      badge: optionalText(40),
+      verdict: optionalText(400),
+      pros: z.array(z.string().trim().max(200)).max(10).default([]).transform((xs) => xs.filter(Boolean)),
+      cons: z.array(z.string().trim().max(200)).max(10).default([]).transform((xs) => xs.filter(Boolean)),
+      subjectEntityId: optionalId,
+      releaseYear: z.coerce.number().int().min(1900).max(2100).optional().nullable(),
+      pricing: optionalText(120),
+      affiliateUrl: z
+        .string()
+        .trim()
+        .max(1000)
+        .optional()
+        .transform((v) => (v ? v : null))
+        .refine((v) => v === null || /^https:\/\//.test(v), "must start with https://"),
+    })
+    .optional(),
+  video: z
+    .object({
+      url: z.string().trim().max(500).optional().default(""),
+      durationSeconds: z.coerce.number().int().min(0).max(86_400).optional().nullable(),
+      studioEntityId: optionalId,
+      /** Optional rating for the video, out of 5. */
+      score: z.coerce
+        .number()
+        .min(0)
+        .max(5)
+        .refine((n) => Number.isInteger(n * 2), "must be in half steps")
+        .optional()
+        .nullable(),
+    })
+    .optional(),
 });
 
 export type ContentInput = z.input<typeof contentInput>;
@@ -254,7 +306,17 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
     if (input.scheduledFor <= now) throw new Error("Scheduled for: must be in the future");
   }
 
+  if (input.type === "review" && !input.review) throw new Error("Review: add a score");
+  // Videos must point at an approved provider before they can go live.
+  const embed = input.type === "video" && input.video?.url ? toEmbed(input.video.url) : null;
+  if (input.type === "video" && input.video?.url && !embed) throw new Error("Video: that link isn't from an approved video provider");
+  if (input.type === "video" && (input.status === "published" || input.status === "scheduled") && !embed) {
+    throw new Error("Video: add the video link before publishing");
+  }
+  if (embed && !embedSrc(embed.provider, embed.url)) throw new Error("Video: unsupported embed");
+
   await Promise.all([
+    assertOwned(db, s, entities, [input.review?.subjectEntityId, input.video?.studioEntityId], "studio or creator"),
     assertOwned(db, s, categories, [input.categoryId], "category"),
     assertOwned(db, s, media, [input.heroImageId, input.ogImageId], "image"),
     assertOwned(db, s, authors, input.authorIds, "author"),
@@ -337,6 +399,46 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
     if (related.length) {
       await tx.insert(relatedContent).values(related.map((relatedId, position) => ({ contentId: id!, relatedId, position })));
     }
+
+    // Type-specific details. Changing type removes details that no longer apply.
+    const rating =
+      input.type === "review" && input.review
+        ? input.review
+        : input.type === "video" && input.video?.score != null
+          ? { score: input.video.score, badge: null, verdict: null, pros: [], cons: [], subjectEntityId: null, releaseYear: null, pricing: null, affiliateUrl: null }
+          : null;
+    await tx.delete(reviewDetails).where(eq(reviewDetails.contentId, id!));
+    if (rating) {
+      await tx.insert(reviewDetails).values({
+        contentId: id!,
+        score: rating.score.toFixed(1),
+        scoreMax: 5,
+        badge: rating.badge,
+        verdict: rating.verdict,
+        pros: rating.pros,
+        cons: rating.cons,
+        subjectEntityId: rating.subjectEntityId,
+        releaseYear: rating.releaseYear ?? null,
+        pricing: rating.pricing,
+        affiliateUrl: rating.affiliateUrl,
+        reviewedAt: (publishedAt ?? now).toISOString().slice(0, 10),
+      });
+    }
+    await tx.delete(videoDetails).where(eq(videoDetails.contentId, id!));
+    if (input.type === "video") {
+      await tx.insert(videoDetails).values({
+        contentId: id!,
+        provider: embed?.provider ?? "pending",
+        embedUrl: embed?.url ?? "",
+        durationSeconds: input.video?.durationSeconds ?? null,
+        studioEntityId: input.video?.studioEntityId ?? null,
+      });
+    }
+
+    // Entities power "related content": link whoever this piece covers.
+    await tx.delete(contentEntities).where(eq(contentEntities.contentId, id!));
+    const linked = [...new Set([rating?.subjectEntityId, input.type === "video" ? input.video?.studioEntityId : null].filter((x): x is string => !!x))];
+    if (linked.length) await tx.insert(contentEntities).values(linked.map((entityId) => ({ contentId: id!, entityId })));
 
     return { id: id!, slug, status: input.status, wasLive: existing?.status === "published", isNew };
   });

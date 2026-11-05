@@ -201,3 +201,26 @@ export async function setLayoutAction(layout: "issue" | "feed"): Promise<ActionR
     await purge(a);
   }, "Layout changed");
 }
+
+// ---------- Studios & creators ----------
+
+export async function saveEntityAction(input: import("zod").input<typeof import("@/data/admin/taxonomy").entityInput>): Promise<ActionResult<string>> {
+  return run(async () => {
+    const a = await requireAdmin("taxonomy.manage");
+    const { saveEntity } = await import("@/data/admin/taxonomy");
+    const id = await saveEntity(a.db, a.ctx.site, input);
+    await audit(a, input.id ? "entity.update" : "entity.create", "entity", id, { name: input.name });
+    await purge(a);
+    return id;
+  }, "Saved");
+}
+
+export async function deleteEntityAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("taxonomy.manage");
+    const { deleteEntity } = await import("@/data/admin/taxonomy");
+    const r = await deleteEntity(a.db, a.ctx.site, id);
+    await audit(a, "entity.delete", "entity", id, r);
+    await purge(a);
+  }, "Deleted");
+}

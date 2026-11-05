@@ -76,6 +76,15 @@ export type ContentPage = ContentCard & {
   ogImage: MediaRef | null;
   tags: { id: string; name: string; slug: string }[];
   authorDetails: { name: string; slug: string; role: string | null }[];
+  reviewFull: {
+    pros: string[];
+    cons: string[];
+    pricing: string | null;
+    affiliateUrl: string | null;
+    reviewedAt: string | null;
+    subject: { name: string; kind: string; websiteUrl: string | null } | null;
+  } | null;
+  videoFull: { provider: string; embedUrl: string; durationSeconds: number | null } | null;
 };
 
 /** Public URL segment for each content type. */
@@ -94,7 +103,7 @@ export function contentPath(item: { type: ContentType; slug: string }): string {
 }
 
 /** The only definition of "visible to readers". */
-function isLive(s: Site, now = new Date()): SQL {
+export function isLive(s: Site, now = new Date()): SQL {
   return and(
     eq(contentItems.publicationId, s.publicationId),
     eq(contentItems.status, "published"),
@@ -103,7 +112,7 @@ function isLive(s: Site, now = new Date()): SQL {
   )!;
 }
 
-const cardColumns = {
+export const cardColumns = {
   id: contentItems.id,
   type: contentItems.type,
   title: contentItems.title,
@@ -149,7 +158,7 @@ async function loadMedia(db: Db, s: Site, ids: (string | null)[]) {
 }
 
 /** Turns bare content rows into cards with their category, image, authors and score. */
-async function hydrateCards(db: Db, s: Site, rows: CardRow[]): Promise<ContentCard[]> {
+export async function hydrateCards(db: Db, s: Site, rows: CardRow[]): Promise<ContentCard[]> {
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
   const categoryIds = [...new Set(rows.map((r) => r.categoryId).filter((x): x is string => !!x))];
@@ -304,7 +313,7 @@ export async function getPublishedBySlug(
     .limit(1);
   if (!row) return null;
 
-  const [[card], tagRows, authorRows, ogMedia] = await Promise.all([
+  const [[card], tagRows, authorRows, ogMedia, [rev], [vid]] = await Promise.all([
     hydrateCards(db, s, [row]),
     db
       .select({ id: tags.id, name: tags.name, slug: tags.slug })
@@ -319,6 +328,24 @@ export async function getPublishedBySlug(
       .where(and(eq(contentAuthors.contentId, row.id), eq(authors.publicationId, s.publicationId)))
       .orderBy(contentAuthors.position),
     loadMedia(db, s, [row.ogImageId]),
+    db
+      .select({
+        pros: reviewDetails.pros,
+        cons: reviewDetails.cons,
+        pricing: reviewDetails.pricing,
+        affiliateUrl: reviewDetails.affiliateUrl,
+        reviewedAt: reviewDetails.reviewedAt,
+        subjectName: entities.name,
+        subjectKind: entities.kind,
+        subjectUrl: entities.websiteUrl,
+      })
+      .from(reviewDetails)
+      .leftJoin(entities, and(eq(entities.id, reviewDetails.subjectEntityId), eq(entities.publicationId, s.publicationId)))
+      .where(eq(reviewDetails.contentId, row.id)),
+    db
+      .select({ provider: videoDetails.provider, embedUrl: videoDetails.embedUrl, durationSeconds: videoDetails.durationSeconds })
+      .from(videoDetails)
+      .where(eq(videoDetails.contentId, row.id)),
   ]);
 
   return {
@@ -333,12 +360,24 @@ export async function getPublishedBySlug(
     ogImage: row.ogImageId ? (ogMedia.get(row.ogImageId) ?? null) : null,
     tags: tagRows,
     authorDetails: authorRows,
+    reviewFull: rev
+      ? {
+          pros: rev.pros,
+          cons: rev.cons,
+          pricing: rev.pricing,
+          affiliateUrl: rev.affiliateUrl,
+          reviewedAt: rev.reviewedAt,
+          subject: rev.subjectName ? { name: rev.subjectName, kind: rev.subjectKind!, websiteUrl: rev.subjectUrl } : null,
+        }
+      : null,
+    videoFull: vid ?? null,
   };
 }
 
 /**
- * Related content: editor picks first, then items sharing the most tags,
- * then the same category, newest first. Never returns the item itself.
+ * Related content: editor picks first, then a score — shared studio/creator
+ * ×3, shared tags ×2, same category ×1 — newest first on ties. Never
+ * returns the item itself.
  */
 export async function listRelated(db: Db, s: Site, contentId: string, limit = 4): Promise<ContentCard[]> {
   const manual = await db
@@ -361,6 +400,12 @@ export async function listRelated(db: Db, s: Site, contentId: string, limit = 4)
     where ct.content_id = "content_items"."id"
       and ct.tag_id in (select tag_id from content_tags where content_id = ${contentId})
   )`;
+  // Same studio, creator or site: the strongest signal two pieces belong together.
+  const sharedEntities = sql<number>`(
+    select count(*) from content_entities ce
+    where ce.content_id = "content_items"."id"
+      and ce.entity_id in (select entity_id from content_entities where content_id = ${contentId})
+  )`;
   const sameCategory = self.categoryId
     ? sql<number>`case when ${contentItems.categoryId} = ${self.categoryId} then 1 else 0 end`
     : sql<number>`0`;
@@ -369,7 +414,7 @@ export async function listRelated(db: Db, s: Site, contentId: string, limit = 4)
     .select(cardColumns)
     .from(contentItems)
     .where(and(isLive(s), notInArray(contentItems.id, exclude)))
-    .orderBy(desc(sql`(${sharedTags}) * 2 + ${sameCategory}`), desc(contentItems.publishedAt))
+    .orderBy(desc(sql`(${sharedEntities}) * 3 + (${sharedTags}) * 2 + ${sameCategory}`), desc(contentItems.publishedAt))
     .limit(limit - picked.length);
 
   return [...picked, ...(await hydrateCards(db, s, rows))];

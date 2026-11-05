@@ -6,7 +6,8 @@ import type { ActionResult } from "@/lib/admin";
 
 export type FieldSpec =
   | { key: string; label: string; kind: "text" | "textarea" | "number"; hint?: string; max?: number; placeholder?: string; counter?: number }
-  | { key: string; label: string; kind: "checkbox"; hint?: string };
+  | { key: string; label: string; kind: "checkbox"; hint?: string }
+  | { key: string; label: string; kind: "select"; hint?: string; options: { value: string; label: string }[]; max?: undefined; placeholder?: undefined; counter?: undefined };
 
 type Rec = { id: string; [k: string]: unknown };
 
@@ -144,7 +145,15 @@ export function RecordManager({
                       </span>
                     )}
                   </span>
-                  {f.kind === "textarea" ? (
+                  {f.kind === "select" ? (
+                    <select value={String(editing[f.key] ?? "")} onChange={(e) => setEditing({ ...editing, [f.key]: e.target.value })}>
+                      {f.options.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : f.kind === "textarea" ? (
                     <textarea value={String(editing[f.key] ?? "")} maxLength={f.max} placeholder={f.placeholder} onChange={(e) => setEditing({ ...editing, [f.key]: e.target.value })} />
                   ) : (
                     <input type={f.kind === "number" ? "number" : "text"} value={String(editing[f.key] ?? "")} maxLength={f.max} placeholder={f.placeholder} onChange={(e) => setEditing({ ...editing, [f.key]: e.target.value })} />

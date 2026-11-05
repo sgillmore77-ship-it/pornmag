@@ -8,6 +8,13 @@ import { MobileMenu, NavRail } from "./nav-links";
 import { Wordmark } from "./wordmark";
 
 
+const SearchIcon = ({ size = 17 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <circle cx="7.5" cy="7.5" r="5.5" />
+    <line x1="11.6" y1="11.6" x2="16.5" y2="16.5" />
+  </svg>
+);
+
 function navFor(ctx: SiteContext): NavLink[] {
   return ctx.publication.settings.nav ?? [
     { label: "Features", href: "/features" },
@@ -20,6 +27,7 @@ function navFor(ctx: SiteContext): NavLink[] {
 /** Links for the mobile menu: main nav plus account. */
 function menuFor(ctx: SiteContext): NavLink[] {
   const extra = [
+    { label: "Search", href: "/search" },
     { label: "Reviews", href: "/reviews" },
     { label: "Features", href: "/features" },
     { label: "News", href: "/news" },
@@ -49,9 +57,16 @@ function FeedHeader({ ctx }: { ctx: SiteContext }) {
             <Wordmark name={ctx.publication.name} />
           </Link>
           <div className="utils only-d">
+            <Link href="/search" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <SearchIcon />
+              Search
+            </Link>
             <Link href="/account">Account</Link>
           </div>
           <div className="only-m" style={{ alignItems: "center" }}>
+            <Link href="/search" className="icon-btn" aria-label="Search">
+              <SearchIcon size={20} />
+            </Link>
             <MobileMenu items={menuFor(ctx)} />
           </div>
         </div>
@@ -79,6 +94,9 @@ function IssueHeader({ ctx }: { ctx: SiteContext }) {
           <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 24 }}>
             <Link href="/account" className="only-d">
               Account
+            </Link>
+            <Link href="/search" className="icon-btn" aria-label="Search" style={{ justifyContent: "flex-end" }}>
+              <SearchIcon size={18} />
             </Link>
           </div>
         </div>

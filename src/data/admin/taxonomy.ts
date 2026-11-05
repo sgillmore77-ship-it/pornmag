@@ -1,7 +1,7 @@
 import { and, asc, count, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db/client";
-import { authors, categories, contentItems, contentTags, media, tags } from "@/db/schema";
+import { authors, categories, contentItems, contentTags, entities, media, tags } from "@/db/schema";
 import type { Site } from "../site";
 import { slugify } from "./content";
 
@@ -198,6 +198,56 @@ export async function deleteAuthor(db: Db, s: Site, id: string) {
   const [{ n }] = await db.select({ n: count() }).from(sql`content_authors`).where(sql`author_id = ${id}`);
   if (n > 0) throw new Error(`This author is credited on ${n} piece${n === 1 ? "" : "s"}. Reassign them first.`);
   const r = await db.delete(authors).where(and(eq(authors.id, id), eq(authors.publicationId, s.publicationId))).returning({ name: authors.name });
+  if (!r.length) throw new Error("Not found");
+  return r[0];
+}
+
+// ---------------------------------------------------------------------------
+// Studios, creators, websites, products and services (what content covers)
+// ---------------------------------------------------------------------------
+
+export const ENTITY_KINDS = ["studio", "creator", "website", "product", "service"] as const;
+
+export async function listEntitiesAdmin(db: Db, s: Site) {
+  const used = sql<number>`(
+    (select count(*)::int from content_entities ce where ce.entity_id = "entities"."id")
+  )`;
+  return db
+    .select({ id: entities.id, kind: entities.kind, name: entities.name, slug: entities.slug, description: entities.description, websiteUrl: entities.websiteUrl, used })
+    .from(entities)
+    .where(eq(entities.publicationId, s.publicationId))
+    .orderBy(asc(entities.kind), asc(entities.name));
+}
+
+export const entityInput = z.object({
+  id: z.string().max(64).optional(),
+  kind: z.enum(ENTITY_KINDS),
+  name: z.string().trim().min(1, "is required").max(120),
+  description: opt(2000),
+  websiteUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .optional()
+    .transform((v) => (v ? v : null))
+    .refine((v) => v === null || /^https:\/\//.test(v), "must start with https://"),
+});
+
+export async function saveEntity(db: Db, s: Site, raw: z.input<typeof entityInput>) {
+  const i = entityInput.parse(raw);
+  const values = { publicationId: s.publicationId, kind: i.kind, name: i.name, slug: slugify(i.name), description: i.description, websiteUrl: i.websiteUrl };
+  if (!values.slug) throw new Error("Name: needs letters or numbers");
+  if (i.id) {
+    const r = await db.update(entities).set(values).where(and(eq(entities.id, i.id), eq(entities.publicationId, s.publicationId))).returning({ id: entities.id });
+    if (!r.length) throw new Error("Not found");
+    return r[0].id;
+  }
+  const [r] = await db.insert(entities).values(values).returning({ id: entities.id });
+  return r.id;
+}
+
+export async function deleteEntity(db: Db, s: Site, id: string) {
+  const r = await db.delete(entities).where(and(eq(entities.id, id), eq(entities.publicationId, s.publicationId))).returning({ name: entities.name });
   if (!r.length) throw new Error("Not found");
   return r[0];
 }

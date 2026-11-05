@@ -64,7 +64,7 @@ type Item = {
   img: Img;
   featured?: boolean;
   views?: number;
-  review?: { score: number; studio: string; year: number; verdict: string; badge?: string };
+  review?: { score: number; studio: string; year: number; verdict: string; badge?: string; pros?: string[]; cons?: string[]; pricing?: string };
   video?: { duration: string; studio: string; score?: number };
 };
 
@@ -87,7 +87,7 @@ const ITEMS: Item[] = [
   { type: "article", title: "The 25 best scenes of 2026 (so far)", dek: "Our critics' running list, ranked and argued over.", category: "Best Of", author: "The Editors", hoursAgo: 130, img: { tone: "#3A2224", caption: "Abstract. Red light leak on film" }, views: 700 },
   { type: "article", title: "The costume designer dressing adult cinema", dek: "How one atelier turned wardrobe into narrative.", category: "Profile", author: "Theo Marsh", hoursAgo: 140, img: { tone: "#2B2823", caption: "Tailoring detail, pins and chalk" } },
   // Reviews (scores out of 5)
-  { type: "review", title: "Velour Hours", dek: "A languid two-hander from Halcyon Pictures.", category: "Brunette", author: "Mara Okafor", hoursAgo: 26, img: { tone: "#3B1F25", caption: "Still. Velvet, deep red, out of focus" }, review: { score: 4.5, studio: "Halcyon Pictures", year: 2026, badge: "Best New Release", verdict: "A languid, gorgeously lit two-hander that trusts its audience. The year’s most confident release." } },
+  { type: "review", title: "Velour Hours", dek: "A languid two-hander from Halcyon Pictures.", category: "Brunette", author: "Mara Okafor", hoursAgo: 26, img: { tone: "#3B1F25", caption: "Still. Velvet, deep red, out of focus" }, review: { score: 4.5, studio: "Halcyon Pictures", year: 2026, badge: "Best New Release", verdict: "A languid, gorgeously lit two-hander that trusts its audience. The year’s most confident release.", pros: ["Beautiful tungsten lighting", "Performances with real chemistry", "Restrained, confident editing"], cons: ["Slow first act"], pricing: "Rent $7.99 · Buy $14.99" } },
   { type: "review", title: "Night Swim", dek: "Blue Hour Films goes after dark.", category: "Blonde", author: "Mara Okafor", hoursAgo: 50, img: { tone: "#1E2733", caption: "Abstract. Rippled water at night" }, review: { score: 4, studio: "Blue Hour Films", year: 2026, verdict: "Moody and quietly assured. The pool sequence is a career best." } },
   { type: "review", title: "Second Skin", dek: "Atelier Noir's most fashion-forward release.", category: "Black", author: "Jonah Reyes", hoursAgo: 74, img: { tone: "#2C2C2E", caption: "Fashion. Latex glove, studio white" }, review: { score: 3.5, studio: "Atelier Noir", year: 2026, verdict: "Stunning wardrobe, thin script. Worth it for the final act." } },
   { type: "review", title: "Afterglow, Vol. 2", dek: "Sunday Studio returns.", category: "Best Of", author: "Priya Lal", hoursAgo: 98, img: { tone: "#3A2E22", caption: "Golden hour. Sheer curtain, silhouette" }, review: { score: 5, studio: "Sunday Studio", year: 2026, verdict: "The rare sequel that improves on everything. An instant classic." } },
@@ -241,10 +241,15 @@ export async function seed(db: Db, opts: { layout?: "feed" | "issue" } = {}) {
         scoreMax: 5,
         badge: item.review?.badge ?? null,
         verdict: item.review?.verdict ?? null,
+        pros: item.review?.pros ?? [],
+        cons: item.review?.cons ?? [],
+        pricing: item.review?.pricing ?? null,
         releaseYear: item.review?.year ?? null,
         subjectEntityId: item.review ? studioByName.get(item.review.studio) : null,
       });
     }
+    const studioName = item.review?.studio ?? item.video?.studio;
+    if (studioName) await db.insert(t.contentEntities).values({ contentId: row.id, entityId: studioByName.get(studioName)! });
     if (item.video) {
       await db.insert(t.videoDetails).values({
         contentId: row.id,
