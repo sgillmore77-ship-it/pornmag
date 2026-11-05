@@ -1,15 +1,21 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { cache } from "react";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
+import { adPlacements } from "@/db/schema";
 import { getPublicationByHost, type Publication } from "@/data/publications";
 import { site, type Site } from "@/data/site";
 import { getAuth } from "./auth";
 import { segmentToHost } from "./host-segment";
 import { loadActor, type Actor } from "./permissions";
 
+export type AdSlot = (typeof adPlacements.$inferSelect)["slot"];
+
 export type SiteContext = {
   host: string;
+  /** Ad slots that render: enabled placements, or all when previewing. */
+  ads: { slots: AdSlot[]; preview: boolean };
   publication: Publication;
   site: Site;
   /** Absolute origin for canonical URLs, sitemaps and structured data. */
@@ -26,8 +32,19 @@ export const getSiteContext = cache(async (siteParam: string): Promise<SiteConte
   const local = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
   const preview = host.endsWith(".workers.dev");
   const canonicalHost = local || preview ? host : (publication.primaryHost ?? host);
+  const enabled = await (await getDb())
+    .select({ slot: adPlacements.slot })
+    .from(adPlacements)
+    .where(and(eq(adPlacements.publicationId, publication.id), eq(adPlacements.enabled, true)));
+  const previewAds = !!publication.settings.ads?.previewPlaceholders;
   return {
     host,
+    ads: {
+      preview: previewAds,
+      slots: previewAds
+        ? ["header_leaderboard", "in_content", "sidebar", "between_grid", "footer"]
+        : [...new Set(enabled.map((e) => e.slot))],
+    },
     publication,
     site: site(publication.id),
     origin: `${local ? "http" : "https"}://${canonicalHost}`,

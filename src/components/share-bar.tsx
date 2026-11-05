@@ -1,6 +1,6 @@
 /**
  * Share links. Plain links, no third-party scripts or trackers, so they cost
- * nothing on page speed. Sticky beside the article on desktop.
+ * nothing on page speed. Sticky beside the article on wide screens.
  */
 export function ShareBar({ url, title }: { url: string; title: string }) {
   const u = encodeURIComponent(url);
@@ -13,17 +13,14 @@ export function ShareBar({ url, title }: { url: string; title: string }) {
     { name: "Email", href: `mailto:?subject=${t}&body=${u}` },
   ];
   return (
-    <div className="flex items-center gap-3 lg:flex-col lg:items-start">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Share</p>
-      <ul className="flex flex-wrap gap-2 lg:flex-col">
+    <div className="share">
+      <p className="meta" style={{ fontSize: 10, letterSpacing: "0.12em" }}>
+        Share
+      </p>
+      <ul>
         {links.map((l) => (
           <li key={l.name}>
-            <a
-              href={l.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block border border-[var(--rule)] px-3 py-1.5 text-sm hover:border-[var(--brand)] hover:text-[var(--brand)]"
-            >
+            <a href={l.href} target="_blank" rel="noopener noreferrer" className="chip share-link">
               {l.name}
               <span className="sr-only"> (opens in a new tab)</span>
             </a>

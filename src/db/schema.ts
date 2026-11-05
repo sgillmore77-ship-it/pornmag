@@ -122,6 +122,10 @@ export type PublicationTheme = {
   primaryColor: string;
   /** One of the controlled typography pairings in src/lib/theme.ts. */
   fontPairing: string;
+  /** Homepage/header direction: "feed" (grid-led) or "issue" (cover-led). */
+  layout?: "feed" | "issue";
+  /** Force a colour mode; otherwise follows the reader's device. */
+  mode?: "light" | "dark" | "system";
   logoMediaId?: string | null;
   faviconMediaId?: string | null;
 };
@@ -131,7 +135,22 @@ export type PublicationSettings = {
   /** Hook for age assurance; the provider is chosen before launch. */
   ageGate: { enabled: boolean; provider: string | null };
   locale: string;
+  timeZone?: string;
+  /** Main navigation, in order. Only link to pages that exist. */
+  nav?: NavLink[];
+  /** Footer link columns. */
+  footer?: { title: string; links: NavLink[] }[];
+  /** Short description shown under the footer wordmark. */
+  footerBlurb?: string;
+  /** Dateline for the "issue" layout, e.g. "Issue 047 · The After Dark Issue". */
+  issueLabel?: string;
+  ads?: {
+    /** Show labelled empty ad boxes so layouts can be reviewed. Turn off for launch. */
+    previewPlaceholders?: boolean;
+  };
 };
+
+export type NavLink = { label: string; href: string };
 
 export const publications = pgTable("publications", {
   id: id(),
@@ -491,8 +510,12 @@ export const reviewDetails = pgTable("review_details", {
   contentId: text("content_id")
     .primaryKey()
     .references(() => contentItems.id, { onDelete: "cascade" }),
+  /** 0–5 in half steps by default (scoreMax sets the scale). */
   score: numeric("score", { precision: 3, scale: 1 }).notNull(),
-  scoreMax: integer("score_max").notNull().default(10),
+  scoreMax: integer("score_max").notNull().default(5),
+  /** Optional editorial label, e.g. "Best New Release". */
+  badge: text("badge"),
+  releaseYear: integer("release_year"),
   pros: text("pros").array().notNull().default(sql`'{}'::text[]`),
   cons: text("cons").array().notNull().default(sql`'{}'::text[]`),
   verdict: text("verdict"),
@@ -513,6 +536,9 @@ export const videoDetails = pgTable("video_details", {
   embedUrl: text("embed_url").notNull(),
   providerVideoId: text("provider_video_id"),
   durationSeconds: integer("duration_seconds"),
+  studioEntityId: text("studio_entity_id").references(() => entities.id, {
+    onDelete: "set null",
+  }),
   thumbnailId: text("thumbnail_id").references(() => media.id, {
     onDelete: "set null",
   }),

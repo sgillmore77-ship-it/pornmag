@@ -1,5 +1,5 @@
 import { notFound, permanentRedirect } from "next/navigation";
-import { SectionIndex, sectionIndexMetadata } from "@/components/section-index";
+import { Listing, listingMetadata } from "@/components/section-index";
 
 export const revalidate = 300;
 
@@ -15,12 +15,12 @@ function parsePage(n: string): number {
 
 export async function generateMetadata({ params }: PageProps<"/[site]/[section]/page/[n]">) {
   const { site, section, n } = await params;
-  return sectionIndexMetadata(site, section, parsePage(n));
+  return listingMetadata(site, { kind: "section", section }, parsePage(n));
 }
 
 export default async function SectionPagedPage({ params }: PageProps<"/[site]/[section]/page/[n]">) {
   const { site, section, n } = await params;
   const page = parsePage(n);
   if (page === 1) permanentRedirect(`/${section}`);
-  return <SectionIndex site={site} section={section} page={page} />;
+  return <Listing site={site} listing={{ kind: "section", section }} page={page} />;
 }

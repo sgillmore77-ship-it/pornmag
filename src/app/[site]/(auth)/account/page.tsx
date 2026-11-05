@@ -20,19 +20,19 @@ export default async function AccountPage({ params }: PageProps<"/[site]/account
     <AuthShell title="Your account">
       <dl className="space-y-4">
         <div>
-          <dt className="text-sm text-neutral-500">Name</dt>
-          <dd className="text-lg">{viewer.user.name}</dd>
+          <dt className="meta">Name</dt>
+          <dd style={{ fontSize: 18, margin: "4px 0 0" }}>{viewer.user.name}</dd>
         </div>
         <div>
-          <dt className="text-sm text-neutral-500">Email</dt>
-          <dd className="text-lg">{viewer.user.email}</dd>
+          <dt className="meta">Email</dt>
+          <dd style={{ fontSize: 18, margin: "4px 0 0" }}>{viewer.user.email}</dd>
         </div>
         <div>
-          <dt className="text-sm text-neutral-500">Role on {ctx.publication.name}</dt>
-          <dd className="text-lg">{role}</dd>
+          <dt className="meta">Role on {ctx.publication.name}</dt>
+          <dd style={{ fontSize: 18, margin: "4px 0 0" }}>{role}</dd>
         </div>
       </dl>
-      <p className="mt-8 text-sm text-neutral-500">Comment history and saved stories arrive in a later update.</p>
+      <p className="dek" style={{ marginTop: 32 }}>Comment history and saved stories arrive in a later update.</p>
       <div className="mt-8">
         <SignOutButton />
       </div>

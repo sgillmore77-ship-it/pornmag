@@ -2,11 +2,15 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-32 text-center">
-      <p className="font-display text-7xl font-bold text-[var(--brand)]">404</p>
-      <h1 className="mt-4 font-display text-3xl">We couldn&apos;t find that page</h1>
-      <p className="mt-3 text-neutral-500">It may have moved or been taken down.</p>
-      <Link href="/" className="mt-8 inline-block bg-[var(--brand)] px-5 py-3 font-semibold text-[var(--brand-contrast)]">
+    <div className="wrap" style={{ textAlign: "center", paddingBlock: "clamp(64px, 10cqw, 160px)" }}>
+      <p className="kicker">Error 404</p>
+      <h1 className="disp" style={{ marginTop: 12, fontSize: "calc(clamp(42px, 6cqw, 88px) * var(--dsz))" }}>
+        We couldn&apos;t find that page.
+      </h1>
+      <p className="dek" style={{ marginTop: 16, fontSize: 18 }}>
+        It may have moved or been taken down.
+      </p>
+      <Link href="/" className="btn btn-primary btn-lg" style={{ marginTop: 32 }}>
         Back to the homepage
       </Link>
     </div>

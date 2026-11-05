@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Hanken+Grotesk:wght@400;500;600;700&family=Anton&family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Schibsted+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="./image-slot.js"></script>
+<style>:root{--brand:#7A1F3D;--on-brand:#fff;--brand-text:#7A1F3D;--bg:#FFFFFF;--surface:#F4F5F7;--raised:#E6E8EC;--ink:#101216;--muted:#565B66;--line:#D8DBE1;--fd:'Bodoni Moda',Didot,serif;--fb:'Hanken Grotesk',system-ui,sans-serif;--fm:'IBM Plex Mono',ui-monospace,monospace;--dw:600;--dt:none;--dls:-0.015em;--dlh:1;--dsz:1} body{margin:0;background:var(--bg)} a{color:inherit;text-decoration:none} a:hover{color:var(--brand-text)}</style>
+</helmet>
+<div style="background:var(--bg);color:var(--ink);font-family:var(--fb);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh">
+  <div style="max-width:1280px;margin:0 auto;padding:clamp(32px,5vw,72px) clamp(20px,4vw,56px) 120px;display:flex;flex-direction:column;gap:clamp(64px,8vw,112px)">
+
+    <header style="display:flex;flex-direction:column;gap:20px;border-bottom:2px solid var(--ink);padding-bottom:40px">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-family:var(--fm);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)"><span>Design system · v1.0 · White-label ready</span><a href="Homepage.dc.html" style="color:var(--ink)">View homepage →</a></div>
+      <h1 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:var(--dlh);font-size:calc(clamp(56px,9vw,128px) * var(--dsz))">{{ pub }}<span style="color:var(--brand)">.</span></h1>
+      <p style="margin:0;max-width:720px;font-size:20px;line-height:1.5;color:var(--muted);text-wrap:pretty">Every surface reads from a small set of tokens: one brand colour, a type pairing, a light or dark neutral set, and logo slots. Change them in Tweaks and every component and layout holds.</p>
+    </header>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">01</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Brand slots</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px">
+        <div style="background:var(--surface);border:1px solid var(--line);padding:24px;display:flex;flex-direction:column;gap:16px">
+          <span style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Logo · SVG or PNG, min 280 × 64</span>
+          <image-slot id="ds-logo" shape="rect" placeholder="Drop publisher logo" style="width:100%;height:120px"></image-slot>
+          <span style="font-size:14px;color:var(--muted)">Fallback when empty: the wordmark, set in the display face with a brand-coloured full stop.</span>
+          <span style="font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(36px * var(--dsz))">{{ pub }}<span style="color:var(--brand)">.</span></span>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);padding:24px;display:flex;flex-direction:column;gap:16px">
+          <span style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Favicon · square SVG or 512 PNG</span>
+          <div style="display:flex;gap:20px;align-items:flex-end">
+            <image-slot id="ds-favicon" shape="rect" placeholder="Favicon" style="width:120px;height:120px"></image-slot>
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+              <span style="font-size:13px;color:var(--muted)">Fallback</span>
+              <div style="display:flex;gap:12px;align-items:flex-end">
+                <span style="width:64px;height:64px;background:var(--brand);color:var(--on-brand);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);font-size:calc(40px * var(--dsz));line-height:1">{{ initial }}</span>
+                <span style="width:32px;height:32px;background:var(--brand);color:var(--on-brand);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);font-size:calc(20px * var(--dsz));line-height:1">{{ initial }}</span>
+                <span style="width:16px;height:16px;background:var(--brand);color:var(--on-brand);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:var(--dw);font-size:11px;line-height:1">{{ initial }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--line);display:flex;flex-direction:column">
+          <div style="background:var(--brand);color:var(--on-brand);padding:24px;min-height:150px;display:flex;flex-direction:column;justify-content:space-between">
+            <span style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase">--brand · the only swappable colour</span>
+            <span style="font-family:var(--fd);font-weight:var(--dw);font-size:calc(44px * var(--dsz));line-height:1">{{ brandHex }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--surface)">
+            <div style="padding:14px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px"><span style="width:28px;height:28px;background:var(--on-brand);border:1px solid var(--line)"></span><span style="font-family:var(--fm);font-size:11px">--on-brand</span><span style="font-size:13px;color:var(--muted)">Auto: black or white by luminance</span></div>
+            <div style="padding:14px 16px;display:flex;flex-direction:column;gap:6px"><span style="font-family:var(--fd);font-weight:var(--dw);font-size:28px;line-height:1;color:var(--brand-text)">Aa</span><span style="font-family:var(--fm);font-size:11px">--brand-text</span><span style="font-size:13px;color:var(--muted)">Auto-darkened or lightened for 4.5:1 text</span></div>
+          </div>
+        </div>
+      </div>
+      <p style="margin:0;max-width:760px;font-size:15px;color:var(--muted)">Where brand appears: the wordmark full stop, kickers, score badges, primary buttons, the active nav item and the newsletter block. Everything else is neutral, so any hue works.</p>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">02</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Colour tokens</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:24px">
+        <sc-for list="{{ modes }}" as="md" hint-placeholder-count="2">
+          <div style="border:1px solid var(--line);background:{{ md.bg }};color:{{ md.ink }};padding:24px;display:flex;flex-direction:column;gap:16px">
+            <span style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase">{{ md.name }}</span>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+              <sc-for list="{{ md.sw }}" as="s" hint-placeholder-count="6">
+                <div style="display:flex;flex-direction:column;gap:8px"><span style="height:72px;background:{{ s.hex }};border:1px solid {{ md.line }}"></span><span style="font-family:var(--fm);font-size:11px;line-height:1.4">--{{ s.k }}<br>{{ s.hex }}</span><span style="font-size:12px;line-height:1.35;opacity:.75">{{ s.use }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+        <span style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:8px">Fixed: cinema band &amp; image placeholders</span>
+        <sc-for list="{{ tones }}" as="t" hint-placeholder-count="6"><span style="width:56px;height:56px;background-color:{{ t }};background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 1px,transparent 1px 13px)"></span></sc-for>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">03</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Typography</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px">
+        <sc-for list="{{ pairs }}" as="p" hint-placeholder-count="3">
+          <div style="background:var(--surface);border:2px solid {{ p.border }};padding:24px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;justify-content:space-between;font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase"><span>{{ p.name }}</span><span style="color:var(--brand-text)">{{ p.active }}</span></div>
+            <span style="font-family:{{ p.fd }};font-weight:{{ p.dw }};text-transform:{{ p.dt }};font-size:{{ p.big }};line-height:1;letter-spacing:{{ p.dls }}">The Auteurs of After Dark</span>
+            <span style="font-family:{{ p.fb }};font-size:16px;line-height:1.55;color:var(--muted)">A new generation of directors is shooting adult film like cinema. Body copy stays calm and highly legible at 17px.</span>
+            <span style="font-family:var(--fm);font-size:11px;color:var(--muted)">{{ p.spec }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ scale }}" as="t" hint-placeholder-count="10">
+          <div style="display:grid;grid-template-columns:minmax(150px,200px) minmax(0,1fr);gap:24px;align-items:baseline;padding:18px 0;border-bottom:1px solid var(--line)">
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--fm);font-size:12px;font-weight:500">{{ t.k }}</span><span style="font-family:var(--fm);font-size:11px;color:var(--muted)">{{ t.spec }}</span></div>
+            <span style="font-family:{{ t.ff }};font-weight:{{ t.fw }};text-transform:{{ t.tt }};letter-spacing:{{ t.ls }};line-height:{{ t.lh }};font-size:{{ t.fs }};color:{{ t.col }};overflow-wrap:anywhere">{{ t.sample }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">04</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Spacing &amp; grid</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:40px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ space }}" as="s" hint-placeholder-count="10">
+            <div style="display:grid;grid-template-columns:72px 48px 1fr;gap:12px;align-items:center"><span style="font-family:var(--fm);font-size:11px">--s-{{ s.n }}</span><span style="font-family:var(--fm);font-size:11px;color:var(--muted)">{{ s.px }}</span><span style="height:14px;width:{{ s.px }};background:var(--ink)"></span></div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase">Desktop · 12 col · 64 margin · 24–32 gutter · 1440 frame</span>
+            <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:6px;padding:0 18px;height:72px;border:1px solid var(--line)"><sc-for list="{{ c12 }}" as="x" hint-placeholder-count="12"><span style="background:var(--brand);opacity:.18"></span></sc-for></div></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase">Mobile · 4 col · 20 margin · 16 gutter · 390 frame</span>
+            <div style="width:180px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 10px;height:72px;border:1px solid var(--line)"><sc-for list="{{ c4 }}" as="x" hint-placeholder-count="4"><span style="background:var(--brand);opacity:.18"></span></sc-for></div></div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start"><span style="width:64px;height:64px;border:1.5px solid var(--ink)"></span><span style="font-family:var(--fm);font-size:11px">radius 0 · default</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start"><span style="width:64px;height:64px;border:1.5px solid var(--ink);border-radius:50%"></span><span style="font-family:var(--fm);font-size:11px">50% · play, score ring</span></div>
+          </div>
+          <p style="margin:0;font-size:15px;color:var(--muted)">Sizes are fluid between the two frames. Headlines, gutters and section padding interpolate with container width, so the same component works in any column.</p>
+        </div>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">05</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Buttons</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:32px">
+        <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Primary · brand</span>
+          <a href="#" style="background:var(--brand);color:var(--on-brand);height:56px;padding:0 26px;display:flex;align-items:center;font-size:16px;font-weight:600">Subscribe · L 56</a>
+          <a href="#" style="background:var(--brand);color:var(--on-brand);height:44px;padding:0 20px;display:flex;align-items:center;font-size:15px;font-weight:600">Watch now · M 44</a>
+          <a href="#" style="background:var(--brand);color:var(--on-brand);height:36px;padding:0 14px;display:flex;align-items:center;font-size:14px;font-weight:600">Desktop only · S 36</a></div>
+        <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Secondary · ink</span>
+          <a href="#" style="background:var(--ink);color:var(--bg);height:56px;padding:0 26px;display:flex;align-items:center;font-size:16px;font-weight:600">Read the feature</a>
+          <a href="#" style="border:1.5px solid var(--ink);height:44px;padding:0 20px;display:flex;align-items:center;font-size:15px;font-weight:600">Outline · Read more →</a>
+          <span style="background:var(--raised);color:var(--muted);height:44px;padding:0 20px;display:flex;align-items:center;font-size:15px;font-weight:600">Disabled</span></div>
+        <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Text &amp; icon</span>
+          <a href="#" style="font-family:var(--fm);font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:12px 0;border-bottom:1px solid currentColor">View all →</a>
+          <div style="display:flex;gap:8px">
+            <a href="#" style="width:44px;height:44px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7.5" cy="7.5" r="5.5"></circle><line x1="11.6" y1="11.6" x2="16.5" y2="16.5"></line></svg></a>
+            <a href="#" style="width:44px;height:44px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center"><span style="width:0;height:0;border-left:12px solid var(--bg);border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:4px"></span></a>
+            <a href="#" style="height:44px;padding:0 16px;border:1.5px solid var(--ink);display:flex;align-items:center;font-size:15px;font-weight:600">☆ Favourite</a>
+          </div></div>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">06</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Tags &amp; labels</h2></div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+        <span style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-text);font-weight:500">Kicker · Feature</span>
+        <span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line);padding:4px 8px">Article</span>
+        <span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;background:var(--ink);color:var(--bg);padding:4px 8px">▶ Video</span>
+        <span style="font-family:var(--fm);font-size:11px;background:rgba(0,0,0,.78);color:#fff;padding:3px 6px">24:18</span>
+        <span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;background:var(--brand);color:var(--on-brand);padding:6px 10px">Editor's pick</span>
+        <span style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-text);font-weight:500">● Best New Release</span>
+        <span style="font-family:var(--fm);font-size:11px;border:1px solid var(--muted);color:var(--muted);padding:1px 6px">18+</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <span style="height:40px;padding:0 16px;display:flex;align-items:center;background:var(--ink);color:var(--bg);font-size:14px;font-weight:600">Brunette</span>
+        <span style="height:40px;padding:0 16px;display:flex;align-items:center;border:1px solid var(--line);font-size:14px;font-weight:600">Blonde</span>
+        <span style="height:40px;padding:0 16px;display:flex;align-items:center;border:1px solid var(--line);font-size:14px;font-weight:600">Black</span>
+        <span style="height:40px;padding:0 16px;display:flex;align-items:center;border:1px solid var(--line);font-size:14px;font-weight:600">AI</span>
+        <span style="height:40px;padding:0 16px;display:flex;align-items:center;border:1px solid var(--line);font-size:14px;font-weight:600">Best Of</span>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">07</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Score badges</h2></div>
+      <p style="margin:-12px 0 0;max-width:720px;font-size:15px;color:var(--muted)">Five stars, half-star steps. Always pair the numeral with the stars so the score reads at a glance and to screen readers ("Rated 4.5 out of 5").</p>
+      <div style="display:flex;flex-wrap:wrap;gap:48px;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:12px;align-items:center">
+          <div style="width:148px;height:148px;border-radius:50%;border:3px solid var(--brand);display:flex;align-items:center;justify-content:center"><span style="font-family:var(--fd);font-weight:var(--dw);font-size:calc(62px * var(--dsz));line-height:1">4.5</span></div>
+          <div style="display:flex;gap:3px;font-size:22px;line-height:1"><sc-for list="{{ s45 }}" as="st" hint-placeholder-count="5"><span style="position:relative;display:inline-block;color:var(--line)">★<span style="position:absolute;left:0;top:0;bottom:0;width:{{ st.w }};overflow:hidden;color:var(--brand)">★</span></span></sc-for></div>
+          <span style="font-family:var(--fm);font-size:11px;color:var(--muted)">XL ring · lead review</span>
+        </div>
+        <sc-for list="{{ badges }}" as="b" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+            <div style="background:var(--brand);color:var(--on-brand);padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+              <span style="font-family:var(--fd);font-weight:var(--dw);line-height:.9;font-size:calc(44px * var(--dsz))">{{ b.sc }}</span>
+              <div style="display:flex;gap:2px;font-size:14px;line-height:1"><sc-for list="{{ b.stars }}" as="st" hint-placeholder-count="5"><span style="position:relative;display:inline-block;color:color-mix(in srgb,var(--on-brand) 35%,transparent)">★<span style="position:absolute;left:0;top:0;bottom:0;width:{{ st.w }};overflow:hidden;color:var(--on-brand)">★</span></span></sc-for></div>
+            </div>
+            <span style="font-family:var(--fm);font-size:11px;color:var(--muted)">L block · card overlay</span>
+          </div>
+        </sc-for>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span style="display:flex;align-items:center;gap:8px;font-family:var(--fm);font-size:13px"><span style="display:flex;gap:1px;font-size:15px;line-height:1"><sc-for list="{{ s35 }}" as="st" hint-placeholder-count="5"><span style="position:relative;display:inline-block;color:var(--line)">★<span style="position:absolute;left:0;top:0;bottom:0;width:{{ st.w }};overflow:hidden;color:var(--brand)">★</span></span></sc-for></span>3.5</span>
+          <span style="font-family:var(--fm);font-size:13px">★ 4.0</span>
+          <span style="font-family:var(--fm);font-size:11px;color:var(--muted)">S inline · video cards, lists</span>
+        </div>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">08</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Cards</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:32px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Story</span>
+          <a href="#" style="display:flex;flex-direction:column;gap:12px">
+            <div style="position:relative;aspect-ratio:3/2;background-color:#2A2B30;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 1px,transparent 1px 13px)"><span style="position:absolute;left:12px;bottom:10px;right:12px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.66)">IMG · Film set, soft focus</span></div>
+            <span style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-text);font-weight:500">Industry · 4 Nov</span>
+            <h3 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1.08;font-size:calc(25px * var(--dsz))">The studio betting everything on slow 4K</h3>
+            <span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">By Jonah Reyes</span>
+          </a></div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Review</span>
+          <a href="#" style="display:flex;flex-direction:column;gap:10px">
+            <div style="position:relative;aspect-ratio:4/5;background-color:#3B1F25;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 1px,transparent 1px 13px)">
+              <div style="position:absolute;left:0;bottom:0;background:var(--brand);color:var(--on-brand);padding:10px 12px;display:flex;flex-direction:column;gap:5px"><span style="font-family:var(--fd);font-weight:var(--dw);line-height:.9;font-size:calc(38px * var(--dsz))">4.5</span><div style="display:flex;gap:2px;font-size:12px;line-height:1"><sc-for list="{{ s45 }}" as="st" hint-placeholder-count="5"><span style="position:relative;display:inline-block;color:color-mix(in srgb,var(--on-brand) 35%,transparent)">★<span style="position:absolute;left:0;top:0;bottom:0;width:{{ st.w }};overflow:hidden;color:var(--on-brand)">★</span></span></sc-for></div></div>
+            </div>
+            <h3 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1.05;font-size:calc(26px * var(--dsz))">Velour Hours</h3>
+            <span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Halcyon Pictures · 2026</span>
+          </a></div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Video</span>
+          <a href="#" style="display:flex;flex-direction:column;gap:10px">
+            <div style="position:relative;aspect-ratio:16/10;background-color:#1E2733;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 1px,transparent 1px 13px)">
+              <span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.45);border:1.5px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center"><span style="width:0;height:0;border-left:13px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:4px"></span></span>
+              <span style="position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.75);color:#fff;font-family:var(--fm);font-size:11px;padding:3px 6px">28:45</span>
+            </div>
+            <h3 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1.1;font-size:calc(22px * var(--dsz))">Night Swim</h3>
+            <div style="display:flex;justify-content:space-between;font-family:var(--fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)"><span>Blue Hour Films</span><span style="color:var(--ink)">★ 4.0</span></div>
+          </a></div>
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Category tile &amp; news row</span>
+          <a href="#" style="position:relative;aspect-ratio:4/3;background-color:#22283A;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 1px,transparent 1px 13px);color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:14px;gap:2px"><span style="font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);font-size:calc(30px * var(--dsz));line-height:1">AI</span><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.75)">312 videos</span></a>
+          <a href="#" style="display:grid;grid-template-columns:64px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);align-items:baseline"><span style="font-family:var(--fm);font-size:12px;color:var(--muted)">09:42</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-text);font-weight:500">Industry</span><span style="font-size:16px;font-weight:600;line-height:1.35">Halcyon signs three-picture deal</span></span></a></div>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">09</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Navigation</h2></div>
+      <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Desktop header</span>
+        <div style="border:1px solid var(--line);background:var(--bg)">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;padding:18px 28px">
+            <span style="font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(34px * var(--dsz))">{{ pub }}<span style="color:var(--brand)">.</span></span>
+            <div style="display:flex;align-items:center;gap:24px;font-size:14px;font-weight:600"><span>Search</span><span>My Favorites</span><span>Contact Us</span><span style="background:var(--brand);color:var(--on-brand);padding:11px 18px">Get the newsletter</span></div>
+          </div>
+          <div style="display:flex;gap:28px;padding:0 28px;border-top:1px solid var(--line);font-size:15px;font-weight:600;overflow-x:auto;white-space:nowrap">
+            <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><span style="padding:13px 0 11px;border-bottom:2px solid {{ n.bc }};color:{{ n.col }}">{{ n.label }}</span></sc-for>
+          </div>
+        </div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Mobile header + category rail</span>
+          <div style="width:390px;max-width:100%;border:1px solid var(--line);background:var(--bg)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 8px 8px 20px">
+              <span style="font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(26px * var(--dsz))">{{ pub }}<span style="color:var(--brand)">.</span></span>
+              <div style="display:flex"><span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7.5" cy="7.5" r="5.5"></circle><line x1="11.6" y1="11.6" x2="16.5" y2="16.5"></line></svg></span><span style="width:44px;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><span style="width:20px;height:2px;background:currentColor"></span><span style="width:20px;height:2px;background:currentColor"></span><span style="width:20px;height:2px;background:currentColor"></span></span></div>
+            </div>
+            <div style="display:flex;gap:22px;padding:0 20px;border-top:1px solid var(--line);font-size:15px;font-weight:600;overflow-x:auto;white-space:nowrap;scrollbar-width:none">
+              <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><span style="padding:13px 0 11px;border-bottom:2px solid {{ n.bc }};color:{{ n.col }}">{{ n.label }}</span></sc-for>
+            </div>
+          </div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Mobile menu · open</span>
+          <div style="width:390px;max-width:100%;background:var(--ink);color:var(--bg);padding:20px 20px 28px;display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px"><span style="font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase">Menu</span><span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:22px">✕</span></div>
+            <sc-for list="{{ menu }}" as="n" hint-placeholder-count="8"><span style="font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1.1;font-size:calc(30px * var(--dsz));padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)">{{ n }}</span></sc-for>
+          </div></div>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;align-items:baseline;gap:20px;border-top:1px solid var(--line);padding-top:16px"><span style="font-family:var(--fm);font-size:12px;color:var(--brand-text)">10</span><h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(44px * var(--dsz))">Ad slots</h2></div>
+      <p style="margin:-12px 0 0;max-width:720px;font-size:15px;color:var(--muted)">Always labelled "Advertisement", on the neutral raised surface, never inside a card or headline zone. Reserve the slot's height so content never jumps. On mobile, at most one slot per screen height.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:24px">
+        <sc-for list="{{ ads }}" as="a" hint-placeholder-count="5">
+          <div style="background:var(--surface);border:1px solid var(--line);padding:20px;display:flex;flex-direction:column;gap:12px">
+            <span style="font-weight:700;font-size:16px">{{ a.name }}</span>
+            <span style="font-family:var(--fm);font-size:11px;color:var(--muted)">Desktop {{ a.d }} · Mobile {{ a.m }}</span>
+            <div style="height:120px;display:flex;align-items:center;justify-content:center;background:var(--bg)"><span style="width:{{ a.w }};height:{{ a.h }};background:var(--raised);border:1px solid var(--line)"></span></div>
+            <span style="font-size:13px;color:var(--muted)">{{ a.where }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;brandColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#7A1F3D&quot;,&quot;options&quot;:[&quot;#7A1F3D&quot;,&quot;#1F3FD6&quot;,&quot;#0E7C66&quot;,&quot;#E8571F&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;typePairing&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Couture&quot;,&quot;Poster&quot;,&quot;Literary&quot;],&quot;default&quot;:&quot;Couture&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Light&quot;,&quot;Dark&quot;],&quot;default&quot;:&quot;Light&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;publicationName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Ass to Mouth&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;}}">
+class Component extends DCLogic {
+  lum(hex) {
+    let h = (hex || '').replace('#', ''); if (h.length === 3) h = h.split('').map(x => x + x).join('');
+    if (h.length !== 6) return 0.2;
+    const c = [0, 2, 4].map(i => { const v = parseInt(h.substr(i, 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  pairs() {
+    return {
+      Couture: { fd: "'Bodoni Moda', Didot, serif", fb: "'Hanken Grotesk', system-ui, sans-serif", dw: '600', dt: 'none', dls: '-0.015em', dlh: '1', dsz: '1', spec: 'Bodoni Moda 600 / Hanken Grotesk 400–700' },
+      Poster: { fd: "'Anton', Impact, sans-serif", fb: "'Archivo', system-ui, sans-serif", dw: '400', dt: 'uppercase', dls: '0.005em', dlh: '0.98', dsz: '0.9', spec: 'Anton 400 caps / Archivo 400–700' },
+      Literary: { fd: "'Instrument Serif', Georgia, serif", fb: "'Schibsted Grotesk', system-ui, sans-serif", dw: '400', dt: 'none', dls: '-0.01em', dlh: '1', dsz: '1.12', spec: 'Instrument Serif 400 / Schibsted Grotesk 400–700' }
+    };
+  }
+  neutrals(dark) {
+    return dark
+      ? { bg: '#0E1013', surface: '#15171B', raised: '#1E2126', ink: '#F2F4F7', muted: '#9AA1AD', line: '#2B2F36' }
+      : { bg: '#FFFFFF', surface: '#F4F5F7', raised: '#E6E8EC', ink: '#101216', muted: '#565B66', line: '#D8DBE1' };
+  }
+  applyTheme() {
+    const p = this.props, brand = p.brandColor || '#7A1F3D', dark = p.mode === 'Dark', light = this.lum(brand) > 0.36;
+    const P = { ...(this.pairs()[p.typePairing || 'Couture'] || {}) }; delete P.spec;
+    const v = { ...this.neutrals(dark), brand, 'on-brand': light ? '#121110' : '#FFFFFF',
+      'brand-text': dark ? (light ? brand : `color-mix(in oklch, ${brand} 72%, white)`) : `color-mix(in oklch, ${brand} ${light ? 45 : 86}%, black)`, ...P };
+    const s = document.documentElement.style;
+    Object.entries(v).forEach(([k, x]) => s.setProperty('--' + k, x));
+  }
+  componentDidMount() { this.applyTheme(); }
+  componentDidUpdate() { this.applyTheme(); }
+  stars(score) { return [1, 2, 3, 4, 5].map(i => ({ w: Math.max(0, Math.min(1, score - (i - 1))) * 100 + '%' })); }
+  renderVals() {
+    const pub = this.props.publicationName || 'Ass to Mouth';
+    const cur = this.props.typePairing || 'Couture';
+    const use = { bg: 'Page', surface: 'Bands, cards', raised: 'Ads, disabled', ink: 'Text, rules', muted: 'Meta, standfirst', line: 'Hairlines' };
+    const modes = [false, true].map(dk => { const n = this.neutrals(dk); return { name: dk ? 'Dark mode' : 'Light mode', bg: n.bg, ink: n.ink, line: n.line, sw: Object.keys(n).map(k => ({ k, hex: n[k], use: use[k] })) }; });
+    const pairs = Object.entries(this.pairs()).map(([name, p]) => ({ ...p, name, big: `calc(40px * ${p.dsz})`, border: name === cur ? 'var(--brand)' : 'var(--line)', active: name === cur ? '● Active' : '' }));
+    const D = { ff: 'var(--fd)', fw: 'var(--dw)', tt: 'var(--dt)', ls: 'var(--dls)', lh: 'var(--dlh)', col: 'var(--ink)' };
+    const B = { ff: 'var(--fb)', fw: '400', tt: 'none', ls: '0', col: 'var(--ink)' };
+    const Mo = { ff: 'var(--fm)', fw: '500', tt: 'uppercase', ls: '.12em', lh: '1.4', col: 'var(--brand-text)' };
+    const scale = [
+      { ...D, k: 'display-xl', spec: '132 → 48 · cover', fs: 'calc(96px * var(--dsz))', lh: '.94', sample: 'After Dark' },
+      { ...D, k: 'display-l', spec: '80 → 42 · hero', fs: 'calc(72px * var(--dsz))', sample: 'The Auteurs' },
+      { ...D, k: 'display-m', spec: '64 → 36 · section', fs: 'calc(48px * var(--dsz))', sample: 'Screening room' },
+      { ...D, k: 'headline-l', spec: '36 → 28 · lead card', fs: 'calc(34px * var(--dsz))', lh: '1.05', sample: 'In praise of the unhurried scene' },
+      { ...D, k: 'headline-m', spec: '27 → 20 · card', fs: 'calc(26px * var(--dsz))', lh: '1.08', sample: 'Why the best scenes now start with a conversation' },
+      { ...B, k: 'body-l', spec: '19 / 1.55 · standfirst', fs: '19px', lh: '1.55', col: 'var(--muted)', sample: 'We spent a month on set to see what changes when the camera actually cares.' },
+      { ...B, k: 'body', spec: '17 / 1.6 · article', fs: '17px', lh: '1.6', sample: 'Long-form body copy is set at 17px with a generous measure of 60–72 characters.' },
+      { ...B, k: 'ui', spec: '15 / 600 · nav, buttons', fs: '15px', fw: '600', lh: '1.4', sample: 'Latest videos   Best Of   My Favorites' },
+      { ...Mo, k: 'kicker', spec: '11 mono caps +12%', fs: '11px', sample: 'Feature · 5 Nov 2026' },
+      { ...Mo, k: 'meta', spec: '11 mono caps, muted', fs: '11px', col: 'var(--muted)', sample: 'By Mara Okafor · 14 min read' }
+    ];
+    const space = [4, 8, 12, 16, 24, 32, 48, 64, 96, 128].map((px, i) => ({ n: i + 1, px: px + 'px' }));
+    const navL = ['Latest videos', 'Best Of', 'Brunette', 'Blonde', 'Black', 'AI'];
+    const ads = [
+      { name: 'Header leaderboard', d: '728×90', m: '320×50', w: '182px', h: '23px', where: 'Above the masthead, full-width surface band.' },
+      { name: 'Sidebar', d: '300×600', m: '300×250', w: '45px', h: '90px', where: 'Beside Trending; stacks below the list on mobile.' },
+      { name: 'In-content', d: '300×250', m: '300×250', w: '90px', h: '75px', where: 'Beside Latest news; inside article bodies after paragraph 4.' },
+      { name: 'Between-grid', d: '970×90', m: '320×100', w: '243px', h: '23px', where: 'Full row inside the video grid, after the first row.' },
+      { name: 'Footer billboard', d: '970×250', m: '300×250', w: '243px', h: '63px', where: 'Above the footer links.' }
+    ];
+    return {
+      pub, initial: pub.trim().charAt(0).toUpperCase(), brandHex: (this.props.brandColor || '#7A1F3D').toUpperCase(),
+      modes, pairs, scale, space, ads,
+      tones: ['#0E1013', '#3B1F25', '#1E2733', '#2C2A2E', '#3A2E22', '#22283A'],
+      c12: Array.from({ length: 12 }, (_, i) => i), c4: [0, 1, 2, 3],
+      s45: this.stars(4.5), s35: this.stars(3.5),
+      badges: [5, 3.5, 2].map(x => ({ sc: x.toFixed(1), stars: this.stars(x) })),
+      nav: navL.map((l, i) => ({ label: l, bc: i === 0 ? 'var(--brand)' : 'transparent', col: i === 0 ? 'var(--ink)' : 'var(--muted)' })),
+      menu: [...navL, 'My Favorites', 'Contact Us']
+    };
+  }
+}
+</script>
+</body>
+</html>

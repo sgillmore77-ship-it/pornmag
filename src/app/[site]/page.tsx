@@ -1,9 +1,11 @@
-import { EmptyHomepage, HomepageSection } from "@/components/homepage-sections";
 import { JsonLd } from "@/components/json-ld";
+import { FeedSection } from "@/components/mag/sections-feed";
+import { IssueSection } from "@/components/mag/sections-issue";
 import { getDb } from "@/db/client";
 import { getHomepage } from "@/data/homepage";
 import { getSiteContext } from "@/lib/site-context";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { layoutOf } from "@/lib/theme";
 
 export const revalidate = 300;
 
@@ -18,17 +20,25 @@ export async function generateMetadata({ params }: PageProps<"/[site]">) {
 export default async function HomePage({ params }: PageProps<"/[site]">) {
   const ctx = await getSiteContext((await params).site);
   const sections = await getHomepage(await getDb(), ctx.site);
+  const Section = layoutOf(ctx.publication.theme) === "feed" ? FeedSection : IssueSection;
 
   return (
     <>
       <JsonLd data={[organizationJsonLd(ctx), websiteJsonLd(ctx)]} />
       <h1 className="sr-only">{ctx.publication.name}</h1>
       {sections.length === 0 ? (
-        <EmptyHomepage />
+        <div className="wrap sec" style={{ textAlign: "center", paddingBlock: 96 }}>
+          <p className="disp" style={{ fontSize: "calc(36px * var(--dsz))" }}>
+            Nothing published yet.
+          </p>
+          <p className="dek" style={{ marginTop: 12 }}>
+            Stories appear here as soon as they&apos;re published.
+          </p>
+        </div>
       ) : (
-        <div className="space-y-16 pb-8 sm:space-y-24">
+        <div className="stack">
           {sections.map((section, i) => (
-            <HomepageSection key={section.id} section={section} isFirst={i === 0} />
+            <Section key={section.id} section={section} ctx={ctx} first={i === 0} />
           ))}
         </div>
       )}

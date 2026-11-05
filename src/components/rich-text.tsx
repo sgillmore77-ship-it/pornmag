@@ -9,9 +9,17 @@ import { embedSrc } from "@/lib/embeds";
  * Nothing is injected as raw HTML; unknown node types render their children
  * only, and links and embeds are checked against allowlists.
  */
-export function RichText({ doc }: { doc: RichTextDoc | null }) {
+export function RichText({ doc, insertAfterParagraph }: { doc: RichTextDoc | null; insertAfterParagraph?: { n: number; node: ReactNode } }) {
   if (!doc?.content?.length) return null;
-  return <div className="prose-body">{doc.content.map((n, i) => renderNode(n, i))}</div>;
+  let paragraphs = 0;
+  const out: ReactNode[] = [];
+  doc.content.forEach((n, i) => {
+    out.push(renderNode(n, i));
+    if (n.type === "paragraph" && ++paragraphs === insertAfterParagraph?.n) {
+      out.push(<div key="inserted">{insertAfterParagraph.node}</div>);
+    }
+  });
+  return <div className="prose-body">{out}</div>;
 }
 
 function children(node: RichTextNode): ReactNode {

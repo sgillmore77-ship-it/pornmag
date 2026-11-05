@@ -8,6 +8,11 @@ export function absoluteUrl(ctx: SiteContext, path: string): string {
   return new URL(path, ctx.origin).toString();
 }
 
+/** Placeholder media (seed data) has no real file to share. */
+function shareable<T extends { storageKey: string } | null>(m: T): T | null {
+  return m && !m.storageKey.startsWith("placeholder:") ? m : null;
+}
+
 function absoluteMedia(ctx: SiteContext, storageKey: string): string {
   const url = mediaUrl(storageKey);
   return url.startsWith("http") ? url : absoluteUrl(ctx, url);
@@ -18,7 +23,7 @@ export function contentMetadata(ctx: SiteContext, item: ContentPage): Metadata {
   const url = absoluteUrl(ctx, contentPath(item));
   const title = item.seoTitle ?? item.title;
   const description = item.metaDescription ?? item.standfirst ?? undefined;
-  const image = item.ogImage ?? item.heroImage;
+  const image = shareable(item.ogImage) ?? shareable(item.heroImage);
   return {
     title,
     description,
@@ -70,7 +75,7 @@ export function websiteJsonLd(ctx: SiteContext): JsonLd {
  * the reviewed item's details exist, so we never emit half-true schema.
  */
 export function articleJsonLd(ctx: SiteContext, item: ContentPage): JsonLd {
-  const image = item.heroImage ?? item.ogImage;
+  const image = shareable(item.heroImage) ?? shareable(item.ogImage);
   return {
     "@context": "https://schema.org",
     "@type": item.type === "news" ? "NewsArticle" : "Article",

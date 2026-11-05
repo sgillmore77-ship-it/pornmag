@@ -5,14 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { authClient } from "@/lib/auth-client";
 
-const input =
-  "mt-1 block w-full border border-[var(--rule)] bg-transparent px-3 py-2.5 text-base outline-none focus:border-[var(--brand)]";
-const button =
-  "w-full bg-[var(--brand)] px-4 py-3 font-semibold text-[var(--brand-contrast)] disabled:opacity-60";
+const input = "";
+const button = "btn btn-primary btn-lg w-full disabled:opacity-60";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="block text-sm font-medium">
+    <label className="field">
       {label}
       {children}
     </label>
@@ -41,7 +39,7 @@ function useSubmit() {
 
 function ErrorText({ error }: { error: string | null }) {
   return error ? (
-    <p role="alert" className="text-sm text-red-600">
+    <p role="alert" style={{ fontSize: 15, color: "#c62828" }}>
       {error}
     </p>
   ) : null;
@@ -208,7 +206,7 @@ export function SignOutButton() {
         router.push("/");
         router.refresh();
       }}
-      className="border border-[var(--rule)] px-4 py-2 text-sm font-semibold hover:border-[var(--brand)]"
+      className="btn btn-outline"
     >
       Sign out
     </button>

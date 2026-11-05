@@ -18,10 +18,12 @@ import {
   contentDailyStats,
   contentItems,
   contentTags,
+  entities,
   media,
   relatedContent,
   reviewDetails,
   tags,
+  videoDetails,
   type RichTextDoc,
 } from "@/db/schema";
 import type { Site } from "./site";
@@ -50,7 +52,17 @@ export type ContentCard = {
   category: { id: string; name: string; slug: string } | null;
   heroImage: MediaRef | null;
   authors: { name: string; slug: string }[];
-  review: { score: number; scoreMax: number } | null;
+  /** Estimated reading time in minutes (articles and news). */
+  readMinutes: number;
+  review: {
+    score: number;
+    scoreMax: number;
+    badge: string | null;
+    verdict: string | null;
+    releaseYear: number | null;
+    studio: string | null;
+  } | null;
+  video: { durationSeconds: number | null; studio: string | null } | null;
 };
 
 export type ContentPage = ContentCard & {
@@ -101,6 +113,7 @@ const cardColumns = {
   isFeatured: contentItems.isFeatured,
   categoryId: contentItems.categoryId,
   heroImageId: contentItems.heroImageId,
+  bodyChars: sql<number>`length(${contentItems.bodyText})`.mapWith(Number),
 };
 
 type CardRow = {
@@ -113,6 +126,7 @@ type CardRow = {
   isFeatured: boolean;
   categoryId: string | null;
   heroImageId: string | null;
+  bodyChars: number;
 };
 
 async function loadMedia(db: Db, s: Site, ids: (string | null)[]) {
@@ -140,7 +154,7 @@ async function hydrateCards(db: Db, s: Site, rows: CardRow[]): Promise<ContentCa
   const ids = rows.map((r) => r.id);
   const categoryIds = [...new Set(rows.map((r) => r.categoryId).filter((x): x is string => !!x))];
 
-  const [mediaById, cats, authorRows, scores] = await Promise.all([
+  const [mediaById, cats, authorRows, scores, videos] = await Promise.all([
     loadMedia(db, s, rows.map((r) => r.heroImageId)),
     categoryIds.length
       ? db
@@ -155,16 +169,32 @@ async function hydrateCards(db: Db, s: Site, rows: CardRow[]): Promise<ContentCa
       .where(and(inArray(contentAuthors.contentId, ids), eq(authors.publicationId, s.publicationId)))
       .orderBy(contentAuthors.position),
     db
-      .select({ contentId: reviewDetails.contentId, score: reviewDetails.score, scoreMax: reviewDetails.scoreMax })
+      .select({
+        contentId: reviewDetails.contentId,
+        score: reviewDetails.score,
+        scoreMax: reviewDetails.scoreMax,
+        badge: reviewDetails.badge,
+        verdict: reviewDetails.verdict,
+        releaseYear: reviewDetails.releaseYear,
+        studio: entities.name,
+      })
       .from(reviewDetails)
+      .leftJoin(entities, and(eq(entities.id, reviewDetails.subjectEntityId), eq(entities.publicationId, s.publicationId)))
       .where(inArray(reviewDetails.contentId, ids)),
+    db
+      .select({ contentId: videoDetails.contentId, durationSeconds: videoDetails.durationSeconds, studio: entities.name })
+      .from(videoDetails)
+      .leftJoin(entities, and(eq(entities.id, videoDetails.studioEntityId), eq(entities.publicationId, s.publicationId)))
+      .where(inArray(videoDetails.contentId, ids)),
   ]);
 
   const catById = new Map(cats.map((c) => [c.id, c]));
   const scoreById = new Map(scores.map((r) => [r.contentId, r]));
+  const videoById = new Map(videos.map((v) => [v.contentId, v]));
 
   return rows.map((r) => {
     const score = scoreById.get(r.id);
+    const video = videoById.get(r.id);
     return {
       id: r.id,
       type: r.type,
@@ -176,7 +206,19 @@ async function hydrateCards(db: Db, s: Site, rows: CardRow[]): Promise<ContentCa
       category: r.categoryId ? (catById.get(r.categoryId) ?? null) : null,
       heroImage: r.heroImageId ? (mediaById.get(r.heroImageId) ?? null) : null,
       authors: authorRows.filter((a) => a.contentId === r.id).map(({ name, slug }) => ({ name, slug })),
-      review: score ? { score: Number(score.score), scoreMax: score.scoreMax } : null,
+      // ~1,300 characters a minute is a typical adult reading speed.
+      readMinutes: Math.max(1, Math.round((r.bodyChars ?? 0) / 1300)),
+      review: score
+        ? {
+            score: Number(score.score),
+            scoreMax: score.scoreMax,
+            badge: score.badge,
+            verdict: score.verdict,
+            releaseYear: score.releaseYear,
+            studio: score.studio,
+          }
+        : null,
+      video: video ? { durationSeconds: video.durationSeconds, studio: video.studio } : null,
     };
   });
 }
@@ -228,7 +270,7 @@ export async function listTrending(db: Db, s: Site, limit = 6, days = 7): Promis
     .from(contentDailyStats)
     .innerJoin(contentItems, eq(contentItems.id, contentDailyStats.contentId))
     .where(and(isLive(s), eq(contentDailyStats.publicationId, s.publicationId), gte(contentDailyStats.day, since)))
-    .groupBy(...Object.values(cardColumns))
+    .groupBy(contentItems.id)
     .orderBy(desc(views))
     .limit(limit);
   const cards = await hydrateCards(db, s, rows);
@@ -362,4 +404,13 @@ export async function listSitemapEntries(db: Db, s: Site) {
     .where(and(isLive(s), eq(contentItems.robotsIndex, true), sql`${contentItems.canonicalUrl} is null`))
     .orderBy(desc(contentItems.publishedAt))
     .limit(45_000);
+}
+
+export async function getCategoryBySlug(db: Db, s: Site, slug: string) {
+  const [row] = await db
+    .select()
+    .from(categories)
+    .where(and(eq(categories.publicationId, s.publicationId), eq(categories.slug, slug)))
+    .limit(1);
+  return row ?? null;
 }

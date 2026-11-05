@@ -62,12 +62,29 @@ This records the important decisions and the reasons for them. Update it when a 
 - Ad code (1E) will render inside sandboxed containers, not inline in the page.
 - `audit_logs` is in place for admin actions from 1B.
 
+## Design system
+
+The visual design comes from the Claude Design handoff ("design system + homepage").
+
+- **Tokens:** `src/app/magazine.css` holds the tokens and components. It defines neutrals for light and dark (`data-mode` = light, dark or system) and a fixed-dark video band. `src/lib/theme.ts` sets the per-publication values inline on `.site`: brand colour, on-brand text (black or white by luminance, threshold 0.36), brand-as-text for each mode, and the type pairing variables (`--fd --fb --dw --dt --dls --dlh --dsz`).
+- **Type pairings:** Couture (Bodoni Moda + Hanken Grotesk, the default), Poster (Anton + Archivo) and Literary (Instrument Serif + Schibsted Grotesk), with IBM Plex Mono for labels. Fonts are self-hosted via Fontsource, with no Google Fonts requests. Browsers only download the faces a page uses.
+- **Two homepage directions,** switchable per publication with `publications.theme.layout`:
+  - `issue` (1b, the default): cover-led, giant masthead, score ring, outlined rank numbers, typographic category index.
+  - `feed` (1a): grid-led, split hero, rails of review cards and picks, 4-column video grid.
+  - Both render the same ordered `homepage_sections`. The header and footer follow the chosen direction.
+- **Responsive behaviour** uses container queries against `.site` (`cqw` units, as in the design). Mobile swaps (compact story rows, ad sizes, burger menu) happen at a 700px container width.
+- **Placeholder imagery:** seeded media use the storage key `placeholder:<tone>` plus an art-direction caption. They render as the design's striped blocks with an "IMG · …" label, and are never used in OG tags or structured data. Real uploads (1B) replace them.
+- **Ad slots** have reserved sizes per slot (desktop/mobile), so nothing shifts. `settings.ads.previewPlaceholders` shows labelled empty boxes for layout review. **Turn it off before launch.**
+- **Age gate:** a self-declared "Adults only" interstitial, enabled by `settings.ageGate.enabled`. It is in the server HTML and hidden before paint for returning readers via a cookie. It is not age verification (see below).
+- **Navigation, footer columns and the issue dateline** come from `publications.settings` (`nav`, `footer`, `issueLabel`), so they become CMS-editable in 1B. Only pages that exist are linked.
+- **Not built yet, so not shown:** Search, My Favorites, Contact, the newsletter form, and Terms/Privacy/2257 pages. The newsletter section exists but is disabled until there's a real email list behind it.
+
 ## Age assurance and legal
 
 `publications.settings.ageGate` is the hook for an age-verification provider, to be chosen before launch. Which jurisdictions need what is a legal decision. The registration form asks users to confirm they are 18+, which is **not** age verification on its own.
 
 ## Phase status
 
+- **Design system applied:** both homepage directions, article, review, listing and category pages, account pages, age gate, mobile menu.
 - **1A (done):** project setup, full schema, tenant-scoped data layer, auth (register, login, logout, reset, roles), configurable homepage, article pages, section indexes with pagination, metadata, JSON-LD, sitemap, robots, seed data, tests.
-- **Visual design is provisional.** It's token-driven so the Claude Design system can replace it without touching data or routes.
-- **Next — 1B:** CMS dashboard, TipTap editor, categories/tags pages and management, SEO fields UI, media uploads to R2, scheduled publishing, redirects, on-demand cache purge.
+- **Next — 1B:** CMS dashboard (including the homepage layout switch and section ordering), TipTap editor, tag pages, taxonomy management, SEO fields UI, media uploads to R2, scheduled publishing, redirects, on-demand cache purge.

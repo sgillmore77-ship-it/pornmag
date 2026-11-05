@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Hanken+Grotesk:wght@400;500;600;700&family=Anton&family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Schibsted+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>:root{--brand:#7A1F3D;--on-brand:#fff;--brand-text:#7A1F3D;--bg:#FFFFFF;--surface:#F4F5F7;--raised:#E6E8EC;--ink:#101216;--muted:#565B66;--line:#D8DBE1;--fd:'Bodoni Moda',Didot,serif;--fb:'Hanken Grotesk',system-ui,sans-serif;--fm:'IBM Plex Mono',ui-monospace,monospace;--dw:600;--dt:none;--dls:-0.015em;--dlh:1;--dsz:1} body{margin:0;background:#E4E6EA} a{color:inherit;text-decoration:none} a:hover{color:var(--brand-text)}</style>
+</helmet>
+<section id="turn-1" style="padding:72px 80px 160px;display:flex;flex-direction:column;gap:64px;font-family:'Hanken Grotesk',sans-serif;color:#14161A">
+  <div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+    <div style="max-width:760px;display:flex;flex-direction:column;gap:16px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#565B66">Turn 1 · Homepage</span>
+      <h1 style="margin:0;font-size:56px;line-height:1.02;letter-spacing:-0.02em;font-weight:700">Two directions, one token system</h1>
+      <p style="margin:0;font-size:20px;line-height:1.5;color:#3D424C;text-wrap:pretty"><a href="#1a" style="font-weight:700;border-bottom:1px solid currentColor">1a</a> The Feed: grid-led and discovery-first, with a sticky utility header and lots of rails. <a href="#1b" style="font-weight:700;border-bottom:1px solid currentColor">1b</a> The Issue: cover-led and art-directed, with a giant masthead, Pitchfork-style scores and a typographic index. Both read the same tokens. Use Tweaks to change brand colour, type pairing, mode and publication name, and the panel to reorder or hide sections.</p>
+      <a href="Design System.dc.html" style="align-self:flex-start;margin-top:8px;background:#14161A;color:#fff;padding:14px 22px;font-weight:600;font-size:16px">Open the design system →</a>
+    </div>
+    <div style="width:440px;background:#FFFFFF;border:1px solid #CDD0D6;display:flex;flex-direction:column">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #DCDFE4">
+        <span style="font-weight:700;font-size:17px">Homepage sections</span>
+        <button type="button" onClick="{{ reset }}" style="border:0;background:none;font:inherit;font-size:14px;color:#565B66;cursor:pointer;padding:8px 0">Reset order</button>
+      </div>
+      <sc-for list="{{ sections }}" as="s" hint-placeholder-count="9">
+        <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:8px 12px 8px 20px;border-bottom:1px solid #E9EBEE;opacity:{{ s.op }}">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#737885">{{ s.num }}</span>
+          <span style="font-size:16px;font-weight:600">{{ s.label }}</span>
+          <div style="display:flex;gap:4px">
+            <button type="button" onClick="{{ s.up }}" style="width:36px;height:36px;border:1px solid #D0D4DA;background:#fff;cursor:pointer;font-size:14px">↑</button>
+            <button type="button" onClick="{{ s.down }}" style="width:36px;height:36px;border:1px solid #D0D4DA;background:#fff;cursor:pointer;font-size:14px">↓</button>
+            <button type="button" onClick="{{ s.toggle }}" style="width:76px;height:36px;border:1px solid #D0D4DA;background:{{ s.tbg }};color:{{ s.tfg }};cursor:pointer;font:inherit;font-size:13px;font-weight:600">{{ s.stateLabel }}</button>
+          </div>
+        </div>
+      </sc-for>
+      <span style="padding:14px 20px;font-size:13px;color:#666B77">Changes apply to both directions, desktop and mobile. Saved in this browser.</span>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:160px;align-items:flex-start">
+    <div id="1a" style="display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:center;gap:14px"><span style="background:#14161A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:500;padding:6px 12px">1a</span><span style="font-size:28px;font-weight:700;letter-spacing:-0.01em">The Feed: grid-led</span></div>
+      <div style="display:flex;gap:72px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#565B66">Desktop · 1440</span>
+          <div style="width:1440px;box-shadow:0 30px 80px rgba(0,0,0,.14)"><dc-import name="Home Feed" content="{{ content }}" order="{{ order }}" pub="{{ pub }}" hint-size="1440px,6400px"></dc-import></div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#565B66">Mobile · 390</span>
+          <div style="width:390px;box-shadow:0 30px 80px rgba(0,0,0,.14)"><dc-import name="Home Feed" mobile="{{ true }}" content="{{ content }}" order="{{ order }}" pub="{{ pub }}" hint-size="390px,9000px"></dc-import></div></div>
+      </div>
+    </div>
+    <div id="1b" style="display:flex;flex-direction:column;gap:28px">
+      <div style="display:flex;align-items:center;gap:14px"><span style="background:#14161A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:500;padding:6px 12px">1b</span><span style="font-size:28px;font-weight:700;letter-spacing:-0.01em">The Issue: magazine cover</span></div>
+      <div style="display:flex;gap:72px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#565B66">Desktop · 1440</span>
+          <div style="width:1440px;box-shadow:0 30px 80px rgba(0,0,0,.14)"><dc-import name="Home Issue" content="{{ content }}" order="{{ order }}" pub="{{ pub }}" hint-size="1440px,7000px"></dc-import></div></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#565B66">Mobile · 390</span>
+          <div style="width:390px;box-shadow:0 30px 80px rgba(0,0,0,.14)"><dc-import name="Home Issue" mobile="{{ true }}" content="{{ content }}" order="{{ order }}" pub="{{ pub }}" hint-size="390px,10000px"></dc-import></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="age-gate" style="display:flex;flex-direction:column;gap:28px">
+    <div style="display:flex;align-items:center;gap:14px"><span style="background:#14161A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:500;padding:6px 12px">Shared</span><span style="font-size:28px;font-weight:700;letter-spacing:-0.01em">Age gate: first visit, both directions</span></div>
+    <div style="display:flex;gap:72px;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#565B66">Desktop · 1440 × 900</span>
+        <div style="width:1440px;height:900px;position:relative;overflow:hidden;background-color:#14161A;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 1px,transparent 1px 13px);box-shadow:0 30px 80px rgba(0,0,0,.14);font-family:var(--fb);color:var(--ink)">
+          <span style="position:absolute;left:32px;top:28px;font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">IMG · Blurred homepage / abstract editorial backdrop</span>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:560px;background:var(--bg);padding:56px;display:flex;flex-direction:column;gap:22px">
+            <span style="font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(34px * var(--dsz))">{{ pub }}<span style="color:var(--brand)">.</span></span>
+            <div style="height:1px;background:var(--line)"></div>
+            <h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:var(--dlh);font-size:calc(52px * var(--dsz))">Adults only.</h2>
+            <p style="margin:0;font-size:18px;line-height:1.55;color:var(--muted)">This magazine covers adult entertainment. You must be 18 or older, or the age of majority where you live, to enter.</p>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+              <a href="#" style="background:var(--brand);color:var(--on-brand);height:56px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">I'm 18 or older · Enter</a>
+              <a href="#" style="border:1.5px solid var(--ink);height:56px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">Leave</a>
+            </div>
+            <label style="display:flex;align-items:center;gap:12px;font-size:15px;cursor:pointer"><span style="width:20px;height:20px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1">✓</span>Remember me on this device for 30 days</label>
+            <span style="font-family:var(--fm);font-size:11px;letter-spacing:.06em;line-height:1.5;color:var(--muted)">By entering you agree to our Terms and Privacy Policy.</span>
+          </div>
+        </div></div>
+      <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#565B66">Mobile · 390 × 844</span>
+        <div style="width:390px;height:844px;position:relative;overflow:hidden;background-color:#14161A;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 1px,transparent 1px 13px);box-shadow:0 30px 80px rgba(0,0,0,.14);font-family:var(--fb);color:var(--ink)">
+          <span style="position:absolute;left:20px;top:24px;right:20px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">IMG · Blurred editorial backdrop</span>
+          <div style="position:absolute;left:0;right:0;bottom:0;background:var(--bg);padding:32px 20px 36px;display:flex;flex-direction:column;gap:18px">
+            <span style="font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:1;font-size:calc(26px * var(--dsz))">{{ pub }}<span style="color:var(--brand)">.</span></span>
+            <h2 style="margin:0;font-family:var(--fd);font-weight:var(--dw);text-transform:var(--dt);letter-spacing:var(--dls);line-height:var(--dlh);font-size:calc(40px * var(--dsz))">Adults only.</h2>
+            <p style="margin:0;font-size:17px;line-height:1.55;color:var(--muted)">This magazine covers adult entertainment. You must be 18 or older to enter.</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <a href="#" style="background:var(--brand);color:var(--on-brand);height:56px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">I'm 18 or older · Enter</a>
+              <a href="#" style="border:1.5px solid var(--ink);height:52px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">Leave</a>
+            </div>
+            <label style="display:flex;align-items:center;gap:12px;font-size:15px;min-height:44px"><span style="width:20px;height:20px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1">✓</span>Remember me for 30 days</label>
+            <span style="font-family:var(--fm);font-size:11px;letter-spacing:.06em;color:var(--muted)">By entering you agree to our Terms and Privacy Policy.</span>
+          </div>
+        </div></div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;brandColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#7A1F3D&quot;,&quot;options&quot;:[&quot;#7A1F3D&quot;,&quot;#1F3FD6&quot;,&quot;#0E7C66&quot;,&quot;#E8571F&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;typePairing&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Couture&quot;,&quot;Poster&quot;,&quot;Literary&quot;],&quot;default&quot;:&quot;Couture&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Light&quot;,&quot;Dark&quot;],&quot;default&quot;:&quot;Light&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;publicationName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Ass to Mouth&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;}}">
+class Component extends DCLogic {
+  state = { order: this.loadOrder() };
+  defOrder() { return ['hero','latest','reviews','trending','videos','picks','categories','news','newsletter'].map(k => ({ key: k, on: true })); }
+  loadOrder() {
+    try { const s = JSON.parse(localStorage.getItem('a2m-home-order')); if (Array.isArray(s) && s.length === 9) return s; } catch (e) {}
+    return this.defOrder();
+  }
+  save(order) { this.setState({ order }); try { localStorage.setItem('a2m-home-order', JSON.stringify(order)); } catch (e) {} }
+  move(i, d) { const o = this.state.order.slice(); const j = i + d; if (j < 0 || j >= o.length) return; [o[i], o[j]] = [o[j], o[i]]; this.save(o); }
+  toggle(i) { const o = this.state.order.map((s, k) => k === i ? { ...s, on: !s.on } : s); this.save(o); }
+
+  lum(hex) {
+    let h = (hex || '').replace('#', ''); if (h.length === 3) h = h.split('').map(x => x + x).join('');
+    if (h.length !== 6) return 0.2;
+    const c = [0, 2, 4].map(i => { const v = parseInt(h.substr(i, 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  applyTheme() {
+    const p = this.props, brand = p.brandColor || '#7A1F3D', dark = p.mode === 'Dark', light = this.lum(brand) > 0.36;
+    const P = {
+      Couture: { fd: "'Bodoni Moda', Didot, serif", fb: "'Hanken Grotesk', system-ui, sans-serif", dw: '600', dt: 'none', dls: '-0.015em', dlh: '1', dsz: '1' },
+      Poster: { fd: "'Anton', Impact, sans-serif", fb: "'Archivo', system-ui, sans-serif", dw: '400', dt: 'uppercase', dls: '0.005em', dlh: '0.98', dsz: '0.9' },
+      Literary: { fd: "'Instrument Serif', Georgia, serif", fb: "'Schibsted Grotesk', system-ui, sans-serif", dw: '400', dt: 'none', dls: '-0.01em', dlh: '1', dsz: '1.12' }
+    }[p.typePairing || 'Couture'] || {};
+    const N = dark
+      ? { bg: '#0E1013', surface: '#15171B', raised: '#1E2126', ink: '#F2F4F7', muted: '#9AA1AD', line: '#2B2F36' }
+      : { bg: '#FFFFFF', surface: '#F4F5F7', raised: '#E6E8EC', ink: '#101216', muted: '#565B66', line: '#D8DBE1' };
+    const v = { ...N, brand, 'on-brand': light ? '#121110' : '#FFFFFF',
+      'brand-text': dark ? (light ? brand : `color-mix(in oklch, ${brand} 72%, white)`) : `color-mix(in oklch, ${brand} ${light ? 45 : 86}%, black)`,
+      ...P };
+    const s = document.documentElement.style;
+    Object.entries(v).forEach(([k, x]) => s.setProperty('--' + k, x));
+  }
+  componentDidMount() { this.applyTheme(); }
+  componentDidUpdate() { this.applyTheme(); }
+
+  stars(score) { return [1, 2, 3, 4, 5].map(i => ({ w: Math.max(0, Math.min(1, score - (i - 1))) * 100 + '%' })); }
+  rate(x) { return { ...x, sc: x.score.toFixed(1), stars: this.stars(x.score) }; }
+  content() {
+    if (this._c) return this._c;
+    const navL = ['Latest videos', 'Best Of', 'Brunette', 'Blonde', 'Black', 'AI'];
+    const latest = [
+      { kicker: 'Industry', title: 'The studio betting everything on slow, cinematic 4K', dek: 'Halcyon Pictures cut its output in half. Its revenue doubled.', author: 'Jonah Reyes', date: '4 Nov', img: 'Film set, cropped. Dolly track, soft focus', bg: '#2A2B30' },
+      { kicker: 'Opinion', title: 'The AI performer problem: who owns a face?', dek: "Synthetic stars are here. The contracts haven't caught up.", author: 'Priya Lal', date: '4 Nov', img: 'Abstract. Chrome mannequin in profile', bg: '#23272B' },
+      { kicker: 'Interview', title: 'Sienna Vale on directing her first feature', dek: 'Ten years in front of the camera, one year behind it.', author: 'Theo Marsh', date: '3 Nov', img: 'Portrait, blurred. Backlit window', bg: '#33282A' },
+      { kicker: 'Culture', title: 'Why the best scenes now start with a conversation', dek: 'Consent-forward filmmaking has become an aesthetic, not just a policy.', author: 'Ada Brooks', date: '3 Nov', img: 'Two hands, cropped. Linen sheets', bg: '#2E2924' },
+      { kicker: 'Craft', title: "Lighting desire: a cinematographer's notebook", dek: 'Practicals, gels and the art of the flattering shadow.', author: 'Lumen Ortiz', date: '2 Nov', img: 'Abstract. Neon spill on wet glass', bg: '#24222E' },
+      { kicker: 'Business', title: 'Ten years of performer-owned platforms', dek: 'What changed when the talent started owning the means of distribution.', author: 'Kai Ndlovu', date: '1 Nov', img: 'Fashion still. Velvet chair, empty room', bg: '#2B2622' }
+    ];
+    const reviews = [
+      { title: 'Velour Hours', studio: 'Halcyon Pictures', year: 2026, score: 4.5, badge: 'Best New Release', verdict: 'A languid, gorgeously lit two-hander that trusts its audience. The year\u2019s most confident release.', author: 'Mara Okafor', img: 'Still. Velvet, deep red, out of focus', bg: '#3B1F25' },
+      { title: 'Night Swim', studio: 'Blue Hour Films', year: 2026, score: 4, verdict: 'Moody and quietly assured. The pool sequence is a career best.', img: 'Abstract. Rippled water at night', bg: '#1E2733' },
+      { title: 'Second Skin', studio: 'Atelier Noir', year: 2026, score: 3.5, verdict: 'Stunning wardrobe, thin script. Worth it for the final act.', img: 'Fashion. Latex glove, studio white', bg: '#2C2C2E' },
+      { title: 'Afterglow, Vol. 2', studio: 'Sunday Studio', year: 2026, score: 5, verdict: 'The rare sequel that improves on everything. An instant classic.', img: 'Golden hour. Sheer curtain, silhouette', bg: '#3A2E22' }
+    ].map(r => ({ ...this.rate(r), hasBadge: !!r.badge }));
+    const trending = [
+      { type: '\u25B6 Video', title: 'Velour Hours: official trailer', meta: '2:14', bg: '#3B1F25' },
+      { type: 'Article', title: 'The AI performer problem: who owns a face?', meta: 'Opinion · 9 min', bg: '#23272B' },
+      { type: '\u25B6 Video', title: 'Behind the lens with Lumen Ortiz', meta: '11:02', bg: '#24222E' },
+      { type: 'Article', title: 'The 25 best scenes of 2026 (so far)', meta: 'Best Of · 22 min', bg: '#3A2224' },
+      { type: 'Article', title: 'Sienna Vale on directing her first feature', meta: 'Interview · 12 min', bg: '#33282A' },
+      { type: '\u25B6 Video', title: 'Night Swim: first look', meta: '1:48', bg: '#1E2733' }
+    ].map((t, i) => { const v = t.type !== 'Article'; return { ...t, rank: i + 1, num: String(i + 1).padStart(2, '0'), isVideo: v, tagBg: v ? 'var(--ink)' : 'transparent', tagFg: v ? 'var(--bg)' : 'var(--ink)' }; });
+    const videos = [
+      { title: 'Velour Hours', studio: 'Halcyon Pictures', dur: '32:10', score: 4.5, img: 'Hotel corridor, tungsten light', bg: '#3B1F25', desc: 'The year\u2019s most talked-about release, presented in full 4K with a director\u2019s commentary track.' },
+      { title: 'Night Swim', studio: 'Blue Hour Films', dur: '28:45', score: 4, img: 'Abstract. Pool light', bg: '#1E2733' },
+      { title: 'Gilded', studio: 'Atelier Noir', dur: '24:18', score: 4, img: 'Gold fabric, macro', bg: '#3A3022' },
+      { title: 'Low Tide', studio: 'Sunday Studio', dur: '19:52', score: 3.5, img: 'Seascape, long exposure', bg: '#223033' },
+      { title: 'The Fitting Room', studio: 'Atelier Noir', dur: '26:30', score: 4.5, img: 'Mirror, cropped reflection', bg: '#2C2A2E' },
+      { title: 'Slow Burn', studio: 'Halcyon Pictures', dur: '41:07', score: 5, img: 'Candlelight bokeh', bg: '#3A2620' },
+      { title: 'Neon Hours', studio: 'Blue Hour Films', dur: '22:15', score: 3.5, img: 'Neon sign, blurred', bg: '#2A2036' },
+      { title: 'Linen', studio: 'Sunday Studio', dur: '30:02', score: 4, img: 'White sheets, morning light', bg: '#34302B' }
+    ].map(v => this.rate(v));
+    const picks = [
+      { kicker: 'Essay', title: 'In praise of the unhurried scene', dek: 'The case for slowness in an industry built on speed.', author: 'Ada Brooks', img: 'Silhouette behind frosted glass', bg: '#2D2A2F' },
+      { kicker: 'Best Of', title: 'The 25 best scenes of 2026 (so far)', dek: "Our critics' running list, ranked and argued over.", author: 'The Editors', img: 'Abstract. Red light leak on film', bg: '#3A2224' },
+      { kicker: 'Profile', title: 'The costume designer dressing adult cinema', dek: 'How one atelier turned wardrobe into narrative.', author: 'Theo Marsh', img: 'Tailoring detail, pins and chalk', bg: '#2B2823' }
+    ].map((p, i) => ({ ...p, no: i + 1 }));
+    const cats = [
+      { name: 'Brunette', count: '1,284 videos', img: 'Portrait, dark hair, cropped', bg: '#2E2422' },
+      { name: 'Blonde', count: '1,102 videos', img: 'Portrait, sunlit, overexposed', bg: '#3A3326' },
+      { name: 'Black', count: '846 videos', img: 'Portrait, profile, rim light', bg: '#262224' },
+      { name: 'AI', count: '312 videos', img: 'Abstract render, iridescent', bg: '#22283A' },
+      { name: 'Best Of', count: '64 lists', img: 'Award still, gold', bg: '#3A2E1E' },
+      { name: 'Latest videos', count: 'Updated hourly', img: 'Film strip, motion blur', bg: '#2B2B2B' }
+    ];
+    const news = [
+      { time: '09:42', kicker: 'Industry', title: 'Halcyon Pictures signs three-picture deal with Atelier Noir' },
+      { time: '08:15', kicker: 'Legal', title: 'New EU age-verification rules: what changes in January' },
+      { time: 'Yesterday', kicker: 'Awards', title: 'Nominations announced for the 2027 Independent Adult Film Awards' },
+      { time: 'Yesterday', kicker: 'AI', title: 'Major platform bans unlabelled synthetic performers' },
+      { time: '3 Nov', kicker: 'Festivals', title: "Berlin's after-dark film festival returns with a record programme" },
+      { time: '3 Nov', kicker: 'Creators', title: 'Performer collective launches its own streaming co-op' },
+      { time: '2 Nov', kicker: 'Tech', title: 'The 8K cinema camera everyone on set is talking about' }
+    ];
+    this._c = {
+      nav: navL.map((l, i) => ({ label: l, bc: i === 0 ? 'var(--brand)' : 'transparent', col: i === 0 ? 'var(--ink)' : 'var(--muted)' })),
+      hero: { kicker: 'Feature', title: 'The Auteurs of After Dark', dek: 'A new generation of directors is shooting adult film like cinema: long takes, real scripts, performers with final say. We spent a month on set to see what changes when the camera actually cares.', author: 'Mara Okafor', date: '5 Nov 2026', read: '14 min read', img: 'Editorial portrait. Red silk, low-key light', bg: '#3A2226' },
+      latest, latestLead: latest[0], latestRest: latest.slice(1), latestMid: latest.slice(1, 3), latestList: latest.slice(3),
+      reviews, revLead: reviews[0], revRest: reviews.slice(1),
+      trending, vidA: videos.slice(0, 4), vidB: videos.slice(4), vidLead: videos[0], vidRest: videos.slice(1, 7),
+      picks, cats, news
+    };
+    return this._c;
+  }
+  renderVals() {
+    const L = { hero: 'Hero feature', latest: 'Latest stories', reviews: 'Featured reviews', trending: 'Trending', videos: 'Featured video', picks: "Editor's picks", categories: 'Popular categories', news: 'Latest news', newsletter: 'Newsletter' };
+    const order = this.state.order;
+    return {
+      content: this.content(), order, pub: this.props.publicationName || 'Ass to Mouth',
+      reset: () => this.save(this.defOrder()),
+      sections: order.map((s, i) => ({
+        label: L[s.key], num: String(i + 1).padStart(2, '0'), op: s.on ? 1 : 0.5,
+        stateLabel: s.on ? 'Shown' : 'Hidden', tbg: s.on ? '#14161A' : '#fff', tfg: s.on ? '#fff' : '#14161A',
+        up: () => this.move(i, -1), down: () => this.move(i, 1), toggle: () => this.toggle(i)
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

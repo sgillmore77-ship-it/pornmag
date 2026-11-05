@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { safeHref } from "@/components/rich-text";
 import { embedSrc } from "@/lib/embeds";
 import { can } from "@/lib/permissions";
-import { themeStyle } from "@/lib/theme";
+import { layoutOf, themeStyle } from "@/lib/theme";
 
 describe("rich text links", () => {
   it("allows http(s), mailto and same-site links", () => {
@@ -51,14 +51,37 @@ describe("permissions", () => {
 });
 
 describe("theme", () => {
-  it("rejects anything that isn't a plain hex colour", () => {
+  it("rejects anything that isn't a plain hex colour or a known pairing", () => {
     const style = themeStyle({ primaryColor: "red;} body{display:none", fontPairing: "nope" }) as Record<string, string>;
-    expect(style["--brand"]).toBe("#e4002b");
-    expect(style["--pub-display"]).toContain("Georgia");
+    expect(style["--brand"]).toBe("#7A1F3D");
+    expect(style["--fd"]).toContain("Bodoni Moda");
   });
-  it("picks readable text on the brand colour", () => {
-    expect((themeStyle({ primaryColor: "#ffff00", fontPairing: "editorial" }) as Record<string, string>)["--brand-contrast"]).toBe("#0a0a0a");
-    expect((themeStyle({ primaryColor: "#000080", fontPairing: "editorial" }) as Record<string, string>)["--brand-contrast"]).toBe("#ffffff");
+  it("picks black or white text on the brand colour (threshold 0.36)", () => {
+    expect((themeStyle({ primaryColor: "#E8571F", fontPairing: "couture" }) as Record<string, string>)["--on-brand"]).toBe("#FFFFFF");
+    expect((themeStyle({ primaryColor: "#FFD60A", fontPairing: "couture" }) as Record<string, string>)["--on-brand"]).toBe("#121110");
+  });
+  it("applies the chosen type pairing", () => {
+    const poster = themeStyle({ primaryColor: "#1F3FD6", fontPairing: "poster" }) as Record<string, string>;
+    expect(poster["--fd"]).toContain("Anton");
+    expect(poster["--dt"]).toBe("uppercase");
+    expect(poster["--dsz"]).toBe("0.9");
+  });
+  it("defaults to the Issue layout", () => {
+    expect(layoutOf({ primaryColor: "#000000", fontPairing: "couture" })).toBe("issue");
+    expect(layoutOf({ primaryColor: "#000000", fontPairing: "couture", layout: "feed" })).toBe("feed");
+  });
+});
+
+describe("date formats", () => {
+  const now = new Date("2026-11-05T21:00:00Z");
+  it("shows clock time today, 'Yesterday', then a short date", async () => {
+    const { formatNewsTime, formatShortDate, formatDuration } = await import("@/lib/format");
+    expect(formatNewsTime(new Date("2026-11-05T09:42:00Z"), "Europe/London", now)).toBe("09:42");
+    expect(formatNewsTime(new Date("2026-11-04T09:42:00Z"), "Europe/London", now)).toBe("Yesterday");
+    expect(formatNewsTime(new Date("2026-11-02T09:42:00Z"), "Europe/London", now)).toBe("2 Nov");
+    expect(formatShortDate(new Date("2025-11-02T09:42:00Z"), "Europe/London", now)).toBe("2 Nov 2025");
+    expect(formatDuration(134)).toBe("2:14");
+    expect(formatDuration(3725)).toBe("1:02:05");
   });
 });
 

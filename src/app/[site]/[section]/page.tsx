@@ -1,4 +1,4 @@
-import { SectionIndex, sectionIndexMetadata } from "@/components/section-index";
+import { Listing, listingMetadata } from "@/components/section-index";
 
 export const revalidate = 300;
 
@@ -9,10 +9,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/[site]/[section]">) {
   const { site, section } = await params;
-  return sectionIndexMetadata(site, section, 1);
+  return listingMetadata(site, { kind: "section", section }, 1);
 }
 
 export default async function SectionPage({ params }: PageProps<"/[site]/[section]">) {
   const { site, section } = await params;
-  return <SectionIndex site={site} section={section} page={1} />;
+  return <Listing site={site} listing={{ kind: "section", section }} page={1} />;
 }

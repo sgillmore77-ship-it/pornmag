@@ -13,21 +13,9 @@ import type { Site } from "./site";
 type SectionKind = (typeof homepageSections.$inferSelect)["kind"];
 
 export type ResolvedSection =
-  | { id: string; kind: Exclude<SectionKind, "categories" | "newsletter">; title: string; items: ContentCard[] }
-  | { id: string; kind: "categories"; title: string; categories: Awaited<ReturnType<typeof listCategories>> }
-  | { id: string; kind: "newsletter"; title: string };
-
-const DEFAULT_TITLES: Record<SectionKind, string> = {
-  hero: "Cover story",
-  latest: "Latest",
-  featured_reviews: "Reviews",
-  trending: "Trending",
-  featured_videos: "Watch",
-  editors_picks: "Editor's picks",
-  categories: "Explore",
-  latest_news: "News",
-  newsletter: "Newsletter",
-};
+  | { id: string; kind: Exclude<SectionKind, "categories" | "newsletter">; title: string | null; items: ContentCard[] }
+  | { id: string; kind: "categories"; title: string | null; categories: Awaited<ReturnType<typeof listCategories>> }
+  | { id: string; kind: "newsletter"; title: string | null };
 
 /**
  * Builds the homepage from the publication's configured sections, in order.
@@ -52,7 +40,8 @@ export async function getHomepage(db: Db, s: Site): Promise<ResolvedSection[]> {
   const out: ResolvedSection[] = [];
 
   for (const section of sections) {
-    const title = section.title ?? DEFAULT_TITLES[section.kind];
+    // Null means "use the layout's default title" (see homepage components).
+    const title = section.title;
     const limit = section.config.limit ?? defaultLimit(section.kind);
     const pickedIds = picks
       .filter((p) => p.sectionId === section.id && p.contentId)
@@ -92,7 +81,7 @@ export async function getHomepage(db: Db, s: Site): Promise<ResolvedSection[]> {
                 : section.kind === "latest_news"
                   ? await listPublished(db, s, { types: ["news"], excludeIds: notThese, limit: remaining })
                   : await listPublished(db, s, {
-                      types: types ?? ["article", "review", "video"],
+                      types: types ?? ["article"],
                       categoryId: section.config.categoryId,
                       excludeIds: notThese,
                       limit: remaining,
@@ -112,18 +101,18 @@ export async function getHomepage(db: Db, s: Site): Promise<ResolvedSection[]> {
   return out;
 }
 
+/** Item counts the design is laid out for. */
 function defaultLimit(kind: SectionKind): number {
-  switch (kind) {
-    case "hero":
-      return 1;
-    case "latest":
-      return 7;
-    case "trending":
-    case "latest_news":
-      return 5;
-    case "categories":
-      return 6;
-    default:
-      return 4;
-  }
+  const limits: Record<SectionKind, number> = {
+    hero: 1,
+    latest: 6,
+    featured_reviews: 4,
+    trending: 6,
+    featured_videos: 8,
+    editors_picks: 3,
+    categories: 6,
+    latest_news: 7,
+    newsletter: 0,
+  };
+  return limits[kind];
 }

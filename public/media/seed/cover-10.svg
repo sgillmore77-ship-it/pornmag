@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b2d42"/><stop offset="1" stop-color="#ef233c"/></linearGradient>
-<filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="90"/></filter>
-<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .08 0"/></filter></defs>
-<rect width="1600" height="1000" fill="url(#g)"/><circle cx="525" cy="678" r="372" fill="#ef233c" opacity="0.64" filter="url(#blur)"/><circle cx="811" cy="666" r="366" fill="#edf2f4" opacity="0.41" filter="url(#blur)"/><circle cx="1099" cy="527" r="425" fill="#edf2f4" opacity="0.49" filter="url(#blur)"/><circle cx="395" cy="154" r="355" fill="#edf2f4" opacity="0.57" filter="url(#blur)"/><rect width="1600" height="1000" filter="url(#grain)"/></svg>
