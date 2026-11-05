@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getDb } from "@/db/client";
-import { getCategoryBySlug, listPublished, TYPE_FOR_SECTION, type ContentType } from "@/data/content";
+import { getCategoryBySlug, getTagBySlug, listPublished, TYPE_FOR_SECTION, type ContentType } from "@/data/content";
+import { notFoundOrRedirect } from "@/lib/redirects";
 import { getSiteContext } from "@/lib/site-context";
 import { CardGrid, ListingCard } from "./mag/listing-card";
 
@@ -15,10 +16,10 @@ const TITLES: Record<string, { title: string; dek: string }> = {
   news: { title: "The Wire", dek: "Industry news as it happens." },
 };
 
-type Listing = { kind: "section"; section: string } | { kind: "category"; slug: string };
+type Listing = { kind: "section"; section: string } | { kind: "category"; slug: string } | { kind: "tag"; slug: string };
 
 function basePath(l: Listing) {
-  return l.kind === "section" ? `/${l.section}` : `/category/${l.slug}`;
+  return l.kind === "section" ? `/${l.section}` : `/${l.kind}/${l.slug}`;
 }
 function pageHref(l: Listing, page: number) {
   return page <= 1 ? basePath(l) : `${basePath(l)}/page/${page}`;
@@ -28,11 +29,26 @@ async function resolve(site: string, l: Listing) {
   const ctx = await getSiteContext(site);
   if (l.kind === "section") {
     const type = TYPE_FOR_SECTION[l.section];
-    if (!type) notFound();
+    if (!type) return notFoundOrRedirect(ctx, basePath(l));
     return { ctx, filter: { types: [type] as ContentType[] }, ...TITLES[l.section], indexable: true, intro: null as string | null };
   }
+  if (l.kind === "tag") {
+    const tag = await getTagBySlug(await getDb(), ctx.site, l.slug);
+    if (!tag) return notFoundOrRedirect(ctx, basePath(l));
+    return {
+      ctx,
+      filter: { tagId: tag.id },
+      title: tag.name,
+      dek: null as string | null,
+      intro: tag.description,
+      // Tag pages stay out of search engines unless an editor opts in.
+      indexable: tag.indexable,
+      seoTitle: tag.seoTitle,
+      metaDescription: tag.metaDescription,
+    };
+  }
   const cat = await getCategoryBySlug(await getDb(), ctx.site, l.slug);
-  if (!cat) notFound();
+  if (!cat) return notFoundOrRedirect(ctx, basePath(l));
   return {
     ctx,
     filter: { categoryId: cat.id },
@@ -69,7 +85,7 @@ export async function Listing({ site, listing, page }: { site: string; listing: 
   return (
     <div className="wrap" style={{ paddingTop: "clamp(28px, 4cqw, 64px)" }}>
       <header style={{ borderTop: "2px solid var(--ink)", paddingTop: 16, marginBottom: "clamp(28px, 3.6cqw, 52px)" }}>
-        {listing.kind === "category" && <p className="kicker">Category</p>}
+        {listing.kind !== "section" && <p className="kicker">{listing.kind === "tag" ? "Tag" : "Category"}</p>}
         <h1 className="disp" style={{ fontSize: "calc(clamp(44px, 6.4cqw, 96px) * var(--dsz))", marginTop: 6 }}>
           {r.title}
         </h1>

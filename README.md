@@ -3,7 +3,7 @@
 An editorial publishing platform for an adult culture and entertainment magazine, built so that it can later host many independent publications (multi-tenant SaaS).
 
 - **Stack:** Next.js 16, TypeScript, Tailwind CSS 4, PostgreSQL (Supabase) with Drizzle ORM, Better Auth, deployed to Cloudflare Workers.
-- **Status:** Phase 1A is complete, with the Claude Design system applied (both homepage directions, switchable per publication). See docs/ARCHITECTURE.md.
+- **Status:** Phases 1A and 1B are complete: the public magazine (Claude Design system, two homepage directions) and the admin CMS at `/admin`. See docs/ARCHITECTURE.md.
 
 ## Docs
 
@@ -25,6 +25,7 @@ npm run dev
 |---|---|
 | `npm run dev` | Local dev server |
 | `npm test` | Test suite (needs `TEST_DATABASE_URL`) |
+| `npm run check` | Lint, typecheck and tests together (run before every push) |
 | `npm run typecheck` / `npm run lint` | Static checks |
 | `npm run db:generate` | Create a migration after editing `src/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations |

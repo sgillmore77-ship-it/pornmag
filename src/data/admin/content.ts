@@ -161,6 +161,13 @@ export async function getContentForEdit(db: Db, s: Site, id: string) {
 
 /** May this actor edit this item? Authors may only edit their own, and never published work. */
 export async function canEditItem(db: Db, s: Site, actor: Actor, id: string): Promise<boolean> {
+  // The item must belong to this publication, whoever is asking.
+  const [exists] = await db
+    .select({ id: contentItems.id })
+    .from(contentItems)
+    .where(and(eq(contentItems.publicationId, s.publicationId), eq(contentItems.id, id)))
+    .limit(1);
+  if (!exists) return false;
   if (can(actor, "content.edit.any")) return true;
   if (!can(actor, "content.edit.own")) return false;
   const [row] = await db
@@ -257,7 +264,12 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
   const slug = slugify(input.slug || input.title) || `untitled-${Date.now()}`;
   const existing = isNew
     ? null
-    : (await db.select({ status: contentItems.status, publishedAt: contentItems.publishedAt }).from(contentItems).where(eq(contentItems.id, input.id!)))[0];
+    : (
+        await db
+          .select({ status: contentItems.status, publishedAt: contentItems.publishedAt })
+          .from(contentItems)
+          .where(and(eq(contentItems.publicationId, s.publicationId), eq(contentItems.id, input.id!)))
+      )[0];
 
   // First publication sets the date; republishing keeps it.
   let publishedAt: Date | null = existing?.publishedAt ?? null;
@@ -292,10 +304,13 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
       const [row] = await tx.insert(contentItems).values({ ...values, createdBy: actor.userId }).returning({ id: contentItems.id });
       id = row.id;
     } else {
-      await tx
+      const updated = await tx
         .update(contentItems)
         .set(values)
-        .where(and(eq(contentItems.publicationId, s.publicationId), eq(contentItems.id, id!)));
+        .where(and(eq(contentItems.publicationId, s.publicationId), eq(contentItems.id, id!)))
+        .returning({ id: contentItems.id });
+      // Belt and braces: never touch links for an item outside this publication.
+      if (updated.length !== 1) throw new Error("Not found");
     }
 
     await tx.delete(contentAuthors).where(eq(contentAuthors.contentId, id!));

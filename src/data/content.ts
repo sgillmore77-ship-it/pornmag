@@ -226,6 +226,7 @@ async function hydrateCards(db: Db, s: Site, rows: CardRow[]): Promise<ContentCa
 export type ListOptions = {
   types?: ContentType[];
   categoryId?: string;
+  tagId?: string;
   featuredOnly?: boolean;
   excludeIds?: string[];
   limit?: number;
@@ -236,6 +237,7 @@ export async function listPublished(db: Db, s: Site, opts: ListOptions = {}): Pr
   const where = [isLive(s)];
   if (opts.types?.length) where.push(inArray(contentItems.type, opts.types));
   if (opts.categoryId) where.push(eq(contentItems.categoryId, opts.categoryId));
+  if (opts.tagId) where.push(sql`exists (select 1 from ${contentTags} ct where ct.content_id = ${contentItems.id} and ct.tag_id = ${opts.tagId})`);
   if (opts.featuredOnly) where.push(eq(contentItems.isFeatured, true));
   if (opts.excludeIds?.length) where.push(notInArray(contentItems.id, opts.excludeIds));
 
@@ -413,4 +415,29 @@ export async function getCategoryBySlug(db: Db, s: Site, slug: string) {
     .where(and(eq(categories.publicationId, s.publicationId), eq(categories.slug, slug)))
     .limit(1);
   return row ?? null;
+}
+
+export async function getTagBySlug(db: Db, s: Site, slug: string) {
+  const [row] = await db
+    .select()
+    .from(tags)
+    .where(and(eq(tags.publicationId, s.publicationId), eq(tags.slug, slug)))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Category and tag pages worth listing in the sitemap: indexable and not empty. */
+export async function listSitemapTaxonomy(db: Db, s: Site) {
+  const live = sql`ci.status = 'published' and ci.published_at <= now()`;
+  const [cats, tagRows] = await Promise.all([
+    db
+      .select({ slug: categories.slug })
+      .from(categories)
+      .where(and(eq(categories.publicationId, s.publicationId), eq(categories.indexable, true), sql`exists (select 1 from content_items ci where ci.category_id = "categories"."id" and ${live})`)),
+    db
+      .select({ slug: tags.slug })
+      .from(tags)
+      .where(and(eq(tags.publicationId, s.publicationId), eq(tags.indexable, true), sql`exists (select 1 from content_tags ct join content_items ci on ci.id = ct.content_id where ct.tag_id = "tags"."id" and ${live})`)),
+  ]);
+  return { categories: cats.map((c) => c.slug), tags: tagRows.map((t) => t.slug) };
 }

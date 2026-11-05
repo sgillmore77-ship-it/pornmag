@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pornmag",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
@@ -15,5 +15,19 @@
     { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "pornmag-cache" },
     { "binding": "MEDIA_BUCKET", "bucket_name": "pornmag-media" }
   ],
-  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "pornmag" }]
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "pornmag" }],
+
+  // Cache tags for on-demand refresh after publishing (create with
+  // `npx wrangler d1 create pornmag-tag-cache`, then paste the id).
+  "d1_databases": [
+    { "binding": "NEXT_TAG_CACHE_D1", "database_name": "pornmag-tag-cache", "database_id": "REPLACE_WITH_D1_ID" }
+  ],
+  // Background regeneration queue for ISR pages.
+  "durable_objects": {
+    "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+
+  // Publish scheduled stories every 5 minutes.
+  "triggers": { "crons": ["*/5 * * * *"] }
 }

@@ -188,3 +188,16 @@ export async function listMediaAction(q?: string): Promise<ActionResult<{ id: st
     return rows.map((m) => ({ id: m.id, storageKey: m.storageKey, alt: m.alt, caption: m.caption, width: m.width, height: m.height, blurColor: m.blurColor }));
   });
 }
+
+export async function setLayoutAction(layout: "issue" | "feed"): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("homepage.manage");
+    if (layout !== "issue" && layout !== "feed") throw new Error("Unknown layout");
+    const { publications } = await import("@/db/schema");
+    const { eq } = await import("drizzle-orm");
+    const theme = { ...a.ctx.publication.theme, layout };
+    await a.db.update(publications).set({ theme }).where(eq(publications.id, a.ctx.publication.id));
+    await audit(a, "homepage.layout", "publication", a.ctx.publication.id, { layout });
+    await purge(a);
+  }, "Layout changed");
+}

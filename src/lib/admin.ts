@@ -1,13 +1,12 @@
 import "server-only";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { revalidateTag, updateTag } from "next/cache";
 import { getDb, type Db } from "@/db/client";
-import { auditLogs, publicationDomains } from "@/db/schema";
+import { auditLogs } from "@/db/schema";
 import { hostToSegment } from "./host-segment";
 import { assertCan, can, type Actor, type Permission } from "./permissions";
-import { getSiteContext, getViewer, type SiteContext } from "./site-context";
+import { getSiteContext, getViewer, siteTag, type SiteContext } from "./site-context";
 
 export type AdminContext = {
   ctx: SiteContext;
@@ -64,23 +63,18 @@ export async function audit(
 }
 
 /**
- * Refreshes every cached public page of one publication, under each host it
- * is served on. Called after anything readers can see changes.
+ * Refreshes every cached public page of one publication (every page carries
+ * the publication's cache tag; see site-context.ts). For route handlers such
+ * as the scheduler; admin actions use `purge`, which also lets the editor see
+ * their change on the very next request.
  */
-export async function purgeSite(db: Db, publicationId: string, extraHosts: string[] = []) {
-  const domains = await db
-    .select({ hostname: publicationDomains.hostname })
-    .from(publicationDomains)
-    .where(eq(publicationDomains.publicationId, publicationId));
-  const hosts = new Set([...domains.map((d) => d.hostname), ...extraHosts]);
-  for (const h of hosts) {
-    const seg = hostToSegment(h);
-    if (seg) revalidatePath(`/${seg}`, "layout");
-  }
+export function purgeSite(publicationId: string) {
+  revalidateTag(siteTag(publicationId), { expire: 0 });
 }
 
+/** From a server action: the next request for any page of this site is fresh. */
 export async function purge(a: AdminContext) {
-  await purgeSite(a.db, a.ctx.publication.id, [a.ctx.host]);
+  updateTag(siteTag(a.ctx.publication.id));
 }
 
 export type ActionResult<T = void> = { ok: true; data?: T; message?: string } | { ok: false; error: string };

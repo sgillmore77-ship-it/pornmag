@@ -28,16 +28,18 @@ npx wrangler login
 npx wrangler hyperdrive create pornmag-db --connection-string="<Supabase direct connection string>"
 npx wrangler r2 bucket create pornmag-cache
 npx wrangler r2 bucket create pornmag-media
+npx wrangler d1 create pornmag-tag-cache
 ```
 
 Then:
 
-- Put the Hyperdrive id into `wrangler.jsonc` (replace `REPLACE_WITH_HYPERDRIVE_ID`).
+- Put the Hyperdrive id and the D1 database id into `wrangler.jsonc` (replace `REPLACE_WITH_HYPERDRIVE_ID` and `REPLACE_WITH_D1_ID`).
 - Make `pornmag-media` public, or attach a custom domain such as `media.yourdomain.com`. Set `NEXT_PUBLIC_MEDIA_BASE_URL` to that URL **at build time**.
 - Set secrets:
   ```
   npx wrangler secret put BETTER_AUTH_SECRET     # openssl rand -base64 32
   npx wrangler secret put RESEND_API_KEY
+  npx wrangler secret put CRON_SECRET            # any long random string; enables scheduled publishing
   ```
 - Add the plain variables `EMAIL_FROM` and `DEFAULT_PUBLICATION_SLUG=main` under `vars` in `wrangler.jsonc` or in the dashboard.
 
@@ -47,7 +49,9 @@ Deploy:
 npm run deploy
 ```
 
-The site is now live at `pornmag.<your-subdomain>.workers.dev`. Search engines are blocked there via robots.txt.
+The site is now live at `pornmag.<your-subdomain>.workers.dev`. Search engines are blocked there via robots.txt. Sign in with the admin account and open `/admin`.
+
+**Before launch:** in Admin → Settings, untick "Show empty ad placeholders", and replace the seeded sample stories and placeholder images.
 
 ## 3. Your domain
 

@@ -35,7 +35,9 @@ This records the important decisions and the reasons for them. Update it when a 
 
 ## Caching and performance
 
-- Public pages use **ISR**: rendered on first request, cached for 5 minutes, then refreshed in the background. On Cloudflare the cache lives in R2, shared by all isolates. Publishing in the CMS (1B) will purge affected pages on demand.
+- Public pages use **ISR**: rendered on first request, cached for 5 minutes, then refreshed in the background.
+  - On Cloudflare the page cache lives in R2, shared by all isolates. Background regeneration runs through a Durable Object queue, and cache tags are stored in D1 (`open-next.config.ts`).
+  - Every cached page carries its publication's tag (`site:<id>`, attached in `getSiteContext`). Any admin change readers can see calls `updateTag`, so the next request for any page of that site, and only that site, is fresh. This is verified on the Workers runtime.
 - Account pages are `force-dynamic` and `private, no-store`. This was verified with two users in production mode and on the Workers runtime: neither ever sees the other's page.
 - `sitemap.xml` and `robots.txt` are generated per request and cached at the edge for an hour, so **builds never need a database**.
 - Images use fixed-ratio boxes (no layout shift), lazy loading, responsive `sizes`, and Cloudflare Image Transformations for AVIF/WebP when enabled.
@@ -50,6 +52,22 @@ This records the important decisions and the reasons for them. Update it when a 
 - JSON-LD: `NewsMediaOrganization`, `WebSite`, `Article`/`NewsArticle`, `BreadcrumbList`. **Review** markup is added in 1C, once reviewed items carry real details, so we never emit misleading schema.
 - The sitemap lists only live, indexable content that is its own canonical. Preview hosts (`*.workers.dev`, http) are disallowed in robots.txt.
 - Tag pages default to `noindex` until an editor opts in. Categories only get indexed pages once they have enough content (1B).
+
+## Admin (CMS)
+
+- Lives at `/admin` on each publication's own domain. It is `force-dynamic` and noindex, and has its own chrome (no public header, footer or age gate).
+- **Every mutation is a server action** in `src/app/[site]/admin/actions.ts`. Each one:
+  - resolves the publication from the request's Host header, never from client input;
+  - re-checks the user's permission (`requireAdmin`);
+  - writes an `audit_logs` row;
+  - refreshes the site cache when readers would see the change.
+- **Data rules** live in `src/data/admin/*`. Every referenced id (category, images, authors, related stories, homepage picks) is checked to belong to the same publication, and a save that doesn't match exactly one row in this publication aborts before touching link tables.
+- **Workflow:** authors create and edit their own drafts only. Editors and admins schedule and publish. A first publish sets the date, and later edits keep it.
+- **Scheduling:** a Cloudflare Cron trigger (every 5 minutes, `worker.ts`) calls `POST /api/cron/publish` with `CRON_SECRET`. That publishes due items across all publications and refreshes their caches.
+- **Media:** uploads are checked by their bytes (JPEG/PNG/WebP/AVIF/GIF only, so no SVG or HTML), are limited to 15 MB, and are stored under `<publication>/<yyyy>/<mm>/<uuid>.<ext>` in R2 (local `public/media` in development). Alt text, caption and credit are edited in the library.
+- **Editor:** TipTap with custom `pullQuote` and `embed` nodes. Images keep their storage key. Embeds only accept approved providers (YouTube/Vimeo for now, `src/lib/embeds.ts`).
+- **Redirects** are stored per publication and followed for any unmatched or missing URL (`notFoundOrRedirect`), with a hit counter.
+- The admin screens use the design tokens but weren't in the Claude Design handoff. They can be art-directed later without touching logic.
 
 ## Security
 
@@ -87,4 +105,5 @@ The visual design comes from the Claude Design handoff ("design system + homepag
 
 - **Design system applied:** both homepage directions, article, review, listing and category pages, account pages, age gate, mobile menu.
 - **1A (done):** project setup, full schema, tenant-scoped data layer, auth (register, login, logout, reset, roles), configurable homepage, article pages, section indexes with pagination, metadata, JSON-LD, sitemap, robots, seed data, tests.
-- **Next — 1B:** CMS dashboard (including the homepage layout switch and section ordering), TipTap editor, tag pages, taxonomy management, SEO fields UI, media uploads to R2, scheduled publishing, redirects, on-demand cache purge.
+- **1B (done):** admin dashboard, content list and editor (TipTap), SEO panel, workflow and scheduling, media library with uploads, categories/tags/authors, public tag pages, homepage manager (layout switch, ordering, picks), site settings (branding, type pairing, navigation, behaviour), redirects, activity log, per-site cache refresh.
+- **Next — 1C:** review and video fields in the editor, video pages with licensed embeds, Review structured data, site search, and smarter related content.

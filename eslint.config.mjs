@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     ".open-next/**",
     // Claude Design prototype files, kept for reference only.
     "docs/**",
+    "worker.ts",
     ".wrangler/**",
     "cloudflare-env.d.ts",
   ]),

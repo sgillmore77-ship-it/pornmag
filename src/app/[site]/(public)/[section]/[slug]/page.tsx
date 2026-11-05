@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/json-ld";
 import { AdSlot } from "@/components/mag/ad-slot";
 import { kickerOf } from "@/components/mag/bits";
@@ -12,6 +11,7 @@ import { getDb } from "@/db/client";
 import { contentPath, getPublishedBySlug, listRelated, SECTION_FOR_TYPE, TYPE_FOR_SECTION } from "@/data/content";
 import { formatDate, formatDuration } from "@/lib/format";
 import { absoluteUrl, articleJsonLd, breadcrumbJsonLd, contentMetadata } from "@/lib/seo";
+import { notFoundOrRedirect } from "@/lib/redirects";
 import { getSiteContext } from "@/lib/site-context";
 
 export const revalidate = 300;
@@ -25,11 +25,11 @@ const SECTION_NAMES: Record<string, string> = { features: "Features", reviews: "
 
 async function load(params: PageProps<"/[site]/[section]/[slug]">["params"]) {
   const { site, section, slug } = await params;
-  const type = TYPE_FOR_SECTION[section];
-  if (!type) notFound();
   const ctx = await getSiteContext(site);
+  const type = TYPE_FOR_SECTION[section];
+  if (!type) return notFoundOrRedirect(ctx, `/${section}/${slug}`);
   const item = await getPublishedBySlug(await getDb(), ctx.site, type, decodeURIComponent(slug));
-  if (!item) notFound();
+  if (!item) return notFoundOrRedirect(ctx, `/${section}/${slug}`);
   return { ctx, item, section };
 }
 
