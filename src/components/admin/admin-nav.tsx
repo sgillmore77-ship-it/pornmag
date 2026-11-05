@@ -11,14 +11,13 @@ function active(pathname: string, href: string) {
 
 export function AdminNav({ items, variant }: { items: AdminNavItem[]; variant: "side" | "bar" }) {
   const pathname = usePathname();
-  let group: string | undefined;
   return (
     <>
-      {items.map((i) => {
-        const header = variant === "side" && i.group && i.group !== group ? ((group = i.group), <span key={`g-${i.group}`} className="group">{i.group}</span>) : null;
+      {items.map((i, idx) => {
+        const showGroup = variant === "side" && i.group && i.group !== items[idx - 1]?.group;
         return (
           <span key={i.href} style={{ display: "contents" }}>
-            {header}
+            {showGroup && <span className="group">{i.group}</span>}
             <Link href={i.href} className={variant === "side" ? "nav" : undefined} aria-current={active(pathname, i.href) ? "page" : undefined}>
               {i.label}
             </Link>

@@ -83,6 +83,14 @@ export function toEmbed(input: string): { provider: string; url: string } | null
   return null;
 }
 
+function B({ on, label, title, onClick, disabled }: { on?: boolean; label: string; title: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button type="button" aria-pressed={on ? "true" : "false"} title={title} aria-label={title} onClick={onClick} disabled={disabled}>
+      {label}
+    </button>
+  );
+}
+
 function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
   const s = useEditorState({
     editor,
@@ -102,12 +110,6 @@ function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
       canRedo: e.can().redo(),
     }),
   });
-
-  const B = ({ on, label, title, onClick, disabled }: { on?: boolean; label: string; title: string; onClick: () => void; disabled?: boolean }) => (
-    <button type="button" aria-pressed={on ? "true" : "false"} title={title} aria-label={title} onClick={onClick} disabled={disabled}>
-      {label}
-    </button>
-  );
 
   return (
     <div className="tt-toolbar" role="toolbar" aria-label="Formatting">
