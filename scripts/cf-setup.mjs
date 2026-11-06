@@ -71,6 +71,13 @@ if (!d1) {
 } else console.log(`D1 database ${NAMES.d1} exists`);
 
 // 4. Hyperdrive (database connection pooling), kept in sync with the secret.
+function safeDecode(v) {
+  try {
+    return decodeURIComponent(v);
+  } catch {
+    return v;
+  }
+}
 let u;
 try {
   u = new URL(dbUrl);
@@ -82,8 +89,8 @@ const origin = {
   host: u.hostname,
   port: Number(u.port || 5432),
   database: decodeURIComponent(u.pathname.slice(1) || "postgres"),
-  user: decodeURIComponent(u.username),
-  password: decodeURIComponent(u.password),
+  user: safeDecode(u.username),
+  password: safeDecode(u.password),
 };
 if (!origin.password) fail("HYPERDRIVE_DATABASE_URL has no password in it. Copy the Supabase string again and replace [YOUR-PASSWORD] with your database password.");
 const configs = await cf("GET", "/hyperdrive/configs");

@@ -69,6 +69,14 @@ jobs:
           cache: npm
       - if: steps.ready.outputs.go == 'true'
         run: npm ci
+      - name: Tidy database links
+        if: steps.ready.outputs.go == 'true'
+        run: |
+          for k in DATABASE_URL HYPERDRIVE_DATABASE_URL; do
+            v=$(node scripts/normalize-db-url.mjs "${!k}")
+            echo "::add-mask::$v"
+            { echo "$k<<__EOF__"; echo "$v"; echo "__EOF__"; } >> "$GITHUB_ENV"
+          done
       - name: Cloudflare resources (storage, cache, database link)
         if: steps.ready.outputs.go == 'true'
         id: cf
