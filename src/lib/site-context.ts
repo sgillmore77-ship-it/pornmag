@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { adPlacements } from "@/db/schema";
+import { activeAds, type AdCreative } from "@/data/ads";
 import { getPublicationByHost, type Publication } from "@/data/publications";
 import { site, type Site } from "@/data/site";
 import { getAuth } from "./auth";
@@ -16,7 +16,7 @@ export type AdSlot = (typeof adPlacements.$inferSelect)["slot"];
 export type SiteContext = {
   host: string;
   /** Ad slots that render: enabled placements, or all when previewing. */
-  ads: { slots: AdSlot[]; preview: boolean };
+  ads: { slots: AdSlot[]; preview: boolean; creatives: Partial<Record<AdSlot, AdCreative[]>> };
   publication: Publication;
   site: Site;
   /** Absolute origin for canonical URLs, sitemaps and structured data. */
@@ -46,18 +46,15 @@ export const getSiteContext = cache(async (siteParam: string): Promise<SiteConte
   const local = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
   const preview = host.endsWith(".workers.dev");
   const canonicalHost = local || preview ? host : (publication.primaryHost ?? host);
-  const enabled = await (await getDb())
-    .select({ slot: adPlacements.slot })
-    .from(adPlacements)
-    .where(and(eq(adPlacements.publicationId, publication.id), eq(adPlacements.enabled, true)));
+  const creatives = await activeAds(await getDb(), site(publication.id));
   const previewAds = !!publication.settings.ads?.previewPlaceholders;
+  const live = Object.keys(creatives) as AdSlot[];
   return {
     host,
     ads: {
       preview: previewAds,
-      slots: previewAds
-        ? ["header_leaderboard", "in_content", "sidebar", "between_grid", "footer"]
-        : [...new Set(enabled.map((e) => e.slot))],
+      slots: previewAds ? [...new Set<AdSlot>(["header_leaderboard", "in_content", "sidebar", "between_grid", "footer", ...live])] : live,
+      creatives,
     },
     publication,
     site: site(publication.id),

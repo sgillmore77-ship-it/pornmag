@@ -21,5 +21,5 @@ export function proxy(request: NextRequest) {
 export const config = {
   // Skip API routes (they read the Host header themselves), build assets,
   // and files served straight from /public.
-  matcher: ["/((?!api/|_next/|media/|favicon.ico).*)"],
+  matcher: ["/((?!api/|_next/|media/|fonts/|favicon.ico).*)"],
 };

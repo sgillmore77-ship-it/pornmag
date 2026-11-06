@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
     loaderFile: "./src/lib/image-loader.ts",
   },
   poweredByHeader: false,
+  // Same as public/_headers, for `next start` and local dev.
+  async headers() {
+    return [{ source: "/fonts/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] }];
+  },
   turbopack: {
     rules: {
       "*.css": {

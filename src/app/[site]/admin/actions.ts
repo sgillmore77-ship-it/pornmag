@@ -33,6 +33,7 @@ import {
   type ModAction,
 } from "@/data/admin/moderation";
 import type { Role } from "@/lib/permissions";
+import { deleteAd, saveAd, saveAdsSettings, type adInput, type adsSettingsInput } from "@/data/admin/ads";
 
 // ---------- Content ----------
 
@@ -279,4 +280,34 @@ export async function unpublishReportedAction(contentId: string): Promise<Action
     await audit(a, "content.unpublish", "content", String(contentId), { via: "report" });
     await purge(a);
   }, "Taken offline (moved to drafts)");
+}
+
+// ---------- Ads ----------
+
+export async function saveAdAction(input: z.input<typeof adInput>): Promise<ActionResult<{ id: string }>> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    const r = await saveAd(a.db, a.ctx.site, input);
+    await audit(a, input.id ? "ad.update" : "ad.create", "ad", r.id, { name: r.name, slot: input.slot, enabled: input.enabled });
+    await purge(a);
+    return { id: r.id };
+  }, "Placement saved");
+}
+
+export async function deleteAdAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    const r = await deleteAd(a.db, a.ctx.site, String(id));
+    await audit(a, "ad.delete", "ad", String(id), r);
+    await purge(a);
+  }, "Deleted");
+}
+
+export async function saveAdsSettingsAction(input: z.input<typeof adsSettingsInput>): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    await saveAdsSettings(a.db, a.ctx.site, input);
+    await audit(a, "ads.settings", "publication", a.ctx.publication.id, { previewPlaceholders: input.previewPlaceholders });
+    await purge(a);
+  }, "Saved");
 }

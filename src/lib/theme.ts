@@ -41,6 +41,18 @@ export const FONT_PAIRINGS = {
 } as const;
 
 export type FontPairing = keyof typeof FONT_PAIRINGS;
+
+/**
+ * The few font files every page of a pairing needs straight away (Latin,
+ * display + body regular, and the mono used for labels). Preloading them
+ * means text renders in the right face first time, without a visible swap.
+ */
+export const FONT_PRELOADS: Record<FontPairing, string[]> = {
+  couture: ["/fonts/bodoni-moda-latin-opsz-normal.woff2", "/fonts/hanken-grotesk-latin-400-normal.woff2"],
+  poster: ["/fonts/anton-latin-400-normal.woff2", "/fonts/archivo-latin-400-normal.woff2"],
+  literary: ["/fonts/instrument-serif-latin-400-normal.woff2", "/fonts/schibsted-grotesk-latin-400-normal.woff2"],
+};
+export const MONO_PRELOAD = "/fonts/ibm-plex-mono-latin-400-normal.woff2";
 export type Layout = "feed" | "issue";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;

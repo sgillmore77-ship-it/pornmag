@@ -16,7 +16,6 @@ export type SettingsState = {
   issueLabel: string;
   footerBlurb: string;
   ageGateEnabled: boolean;
-  adPreview: boolean;
   commentsEnabled: boolean;
   commentModeration: "all" | "first" | "none" | "off";
   timeZone: string;
@@ -132,7 +131,6 @@ export function SettingsForm({ initial, pairings }: { initial: SettingsState; pa
             </select>
           </label>
           <label className="check"><input type="checkbox" checked={v.commentsEnabled} onChange={(e) => set("commentsEnabled", e.target.checked)} />Allow comments on new stories by default</label>
-          <label className="check"><input type="checkbox" checked={v.adPreview} onChange={(e) => set("adPreview", e.target.checked)} />Show empty ad placeholders <span className="hint" style={{ fontSize: 12, color: "#9b1c1c", fontWeight: 400 }}>turn off before launch</span></label>
         </div>
       </section>
 

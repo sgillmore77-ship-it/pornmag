@@ -37,7 +37,7 @@ export function slugify(s: string): string {
 }
 
 /** Throws unless every id exists in the given table *for this publication*. */
-async function assertOwned(
+export async function assertOwned(
   db: Db,
   s: Site,
   table: typeof media | typeof categories | typeof authors | typeof contentItems | typeof tags | typeof entities,

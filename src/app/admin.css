@@ -117,3 +117,16 @@
 .mod-meta strong { color: var(--ink); }
 .mod-body { margin-top: 8px; font-size: 15px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
 .mod-reports { margin-top: 8px; font-size: 13px; color: #9b1c1c; }
+
+/* Analytics */
+.an-chart { display: block; overflow: visible; }
+.an-grid { stroke: var(--line); stroke-width: 1; }
+.an-axis { stroke: var(--muted); stroke-width: 1; }
+.an-tick { font-size: 11px; fill: var(--muted); font-family: var(--fm); }
+.an-fill { fill: var(--brand); }
+.an-bar:hover .an-fill { filter: brightness(1.25); }
+.an-sources { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.an-src-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.an-src-row span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+.an-track { margin-top: 6px; height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+.an-meter { height: 100%; background: var(--brand); border-radius: 3px; }

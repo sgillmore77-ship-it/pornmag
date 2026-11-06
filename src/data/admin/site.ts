@@ -122,7 +122,6 @@ export const settingsInput = z.object({
   issueLabel: z.string().trim().max(80).optional(),
   footerBlurb: z.string().trim().max(240).optional(),
   ageGateEnabled: z.boolean(),
-  adPreview: z.boolean(),
   commentsEnabled: z.boolean(),
   commentModeration: z.enum(["all", "first", "none", "off"]).default("first"),
   timeZone: z.string().max(60).refine((tz) => {
@@ -146,7 +145,6 @@ export async function saveSettings(db: Db, s: Site, raw: z.input<typeof settings
     issueLabel: i.issueLabel || undefined,
     footerBlurb: i.footerBlurb || undefined,
     ageGate: { ...pub.settings.ageGate, enabled: i.ageGateEnabled },
-    ads: { ...pub.settings.ads, previewPlaceholders: i.adPreview },
     commentsEnabled: i.commentsEnabled,
     commentModeration: i.commentModeration,
     timeZone: i.timeZone,

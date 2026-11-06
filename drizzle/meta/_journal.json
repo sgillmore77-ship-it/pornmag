@@ -22,6 +22,13 @@
       "when": 1793921926375,
       "tag": "0002_profiles_moderation",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793923161028,
+      "tag": "0003_ads_analytics",
+      "breakpoints": true
     }
   ]
 }

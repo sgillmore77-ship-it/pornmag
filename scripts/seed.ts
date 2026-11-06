@@ -268,8 +268,27 @@ export async function seed(db: Db, opts: { layout?: "feed" | "issue" } = {}) {
     { publicationId: pub.id, type: "article", status: "published", title: "Embargoed story", slug: "embargoed-story", publishedAt: new Date(now + 7 * 86_400_000) },
   ]);
 
-  const today = new Date().toISOString().slice(0, 10);
-  await db.insert(t.contentDailyStats).values(viewRows.map((v) => ({ publicationId: pub.id, contentId: v.contentId, day: today, views: v.views })));
+  // Sample analytics for the last 14 days, so Trending and the Analytics
+  // page have something to show. Story views and page views agree.
+  const DAYS = 14;
+  const dayOf = (back: number) => new Date(now - back * 86_400_000).toISOString().slice(0, 10);
+  const statRows: (typeof t.contentDailyStats.$inferInsert)[] = [];
+  const perDay = new Array<number>(DAYS).fill(0);
+  for (const v of viewRows) {
+    for (let back = 0; back < DAYS; back++) {
+      // Newer days get more views; a gentle wobble keeps the chart honest-looking.
+      const views = Math.max(1, Math.round(((v.views / DAYS) * (1.6 - back / DAYS)) * (0.85 + ((back * 7 + v.views) % 5) * 0.06)));
+      statRows.push({ publicationId: pub.id, contentId: v.contentId, day: dayOf(back), views });
+      perDay[back] += views;
+    }
+  }
+  await db.insert(t.contentDailyStats).values(statRows);
+  const split = { direct: 0.3, internal: 0.32, search: 0.22, social: 0.12, referral: 0.04 };
+  await db.insert(t.trafficDailyStats).values(
+    perDay.flatMap((storyViews, back) =>
+      Object.entries(split).map(([source, share]) => ({ publicationId: pub.id, day: dayOf(back), source, views: Math.round(storyViews * 1.5 * share) })),
+    ),
+  );
 
   const kinds: (typeof t.homepageSections.$inferInsert)["kind"][] = [
     "hero", "latest", "featured_reviews", "trending", "featured_videos", "editors_picks", "categories", "latest_news", "newsletter",
@@ -299,10 +318,6 @@ export async function seed(db: Db, opts: { layout?: "feed" | "issue" } = {}) {
       position,
     })),
   ]);
-
-  await db.insert(t.adPlacements).values(
-    (["header_leaderboard", "in_content", "sidebar", "between_grid", "footer"] as const).map((slot) => ({ publicationId: pub.id, slot, name: slot.replace(/_/g, " ") })),
-  );
 
   await seedCommunity(db, pub.id, id("Velour Hours", "review"));
 

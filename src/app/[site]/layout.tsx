@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSiteContext } from "@/lib/site-context";
-import { layoutOf, themeStyle } from "@/lib/theme";
+import { preload } from "react-dom";
+import { FONT_PAIRINGS, FONT_PRELOADS, layoutOf, MONO_PRELOAD, themeStyle, type FontPairing } from "@/lib/theme";
 
 export async function generateMetadata({ params }: LayoutProps<"/[site]">): Promise<Metadata> {
   const ctx = await getSiteContext((await params).site);
@@ -17,6 +18,8 @@ export async function generateMetadata({ params }: LayoutProps<"/[site]">): Prom
 export default async function SiteLayout({ children, params }: LayoutProps<"/[site]">) {
   const ctx = await getSiteContext((await params).site);
   const { theme } = ctx.publication;
+  const pairing: FontPairing = theme.fontPairing in FONT_PAIRINGS ? (theme.fontPairing as FontPairing) : "couture";
+  for (const href of [...FONT_PRELOADS[pairing], MONO_PRELOAD]) preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
     <div
       className={`site ${layoutOf(theme)}`}

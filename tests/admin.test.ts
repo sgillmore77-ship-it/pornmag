@@ -161,7 +161,7 @@ describe("site management", () => {
   });
 
   it("validates branding so only safe values reach the page", async () => {
-    const base = { name: "X", primaryColor: "#123456", fontPairing: "couture" as const, layout: "feed" as const, mode: "system" as const, ageGateEnabled: true, adPreview: false, commentsEnabled: true, timeZone: "Europe/London", nav: [] };
+    const base = { name: "X", primaryColor: "#123456", fontPairing: "couture" as const, layout: "feed" as const, mode: "system" as const, ageGateEnabled: true, commentsEnabled: true, timeZone: "Europe/London", nav: [] };
     await expect(saveSettings(db, site(pub.id), { ...base, primaryColor: "red; background:url(x)" })).rejects.toThrow(/hex colour/);
     await expect(saveSettings(db, site(pub.id), { ...base, timeZone: "Mars/Olympus" })).rejects.toThrow(/time zone/);
     await expect(saveSettings(db, site(pub.id), { ...base, nav: [{ label: "x", href: "javascript:alert(1)" }] })).rejects.toThrow();

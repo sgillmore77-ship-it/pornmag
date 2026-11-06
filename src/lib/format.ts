@@ -38,3 +38,13 @@ export function formatDuration(seconds: number | null | undefined): string {
 export function formatLongDateline(d: Date, timeZone = "Europe/London"): string {
   return fmt({ weekday: "long", day: "numeric", month: "long", year: "numeric" }, timeZone).format(d);
 }
+
+/** "YYYY-MM-DD" for a moment in a time zone; stats are bucketed by the publication's day. */
+export function isoDay(d: Date, timeZone = "Europe/London"): string {
+  return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone }).format(d);
+}
+
+/** Adds whole days to a "YYYY-MM-DD" date. */
+export function shiftDay(day: string, days: number): string {
+  return new Date(Date.parse(`${day}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+}

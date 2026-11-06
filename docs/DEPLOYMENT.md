@@ -51,7 +51,7 @@ npm run deploy
 
 The site is now live at `pornmag.<your-subdomain>.workers.dev`. Search engines are blocked there via robots.txt. Sign in with the admin account and open `/admin`.
 
-**Before launch:** in Admin → Settings, untick "Show empty ad placeholders", and replace the seeded sample stories and placeholder images.
+**Before launch:** in Admin → Ads, untick "Show labelled empty boxes", and replace the seeded sample stories, comments, analytics numbers and placeholder images (the seed is for reviewing the design, not for production).
 
 ## 3. Your domain
 
@@ -59,6 +59,9 @@ The site is now live at `pornmag.<your-subdomain>.workers.dev`. Search engines a
 2. Workers → pornmag → Settings → Domains & Routes → add `yourdomain.com` (and `www`).
 3. Tell the app the domain belongs to the publication. Either re-seed with `SEED_DOMAIN=yourdomain.com`, or insert a row into `publication_domains` with `is_primary = true`.
 4. Optional: enable Image Transformations on the zone and set `NEXT_PUBLIC_IMAGE_TRANSFORMS=cloudflare`.
+5. Media domain: add a Cache Rule for `media.yourdomain.com/*` with a long edge and browser TTL (files never change under the same name).
+6. Optional: Cloudflare → Web Analytics → add the site, then paste the token into Admin → Ads → "Cloudflare Web Analytics token". The built-in counts work without it.
+7. Ad networks: paste their ads.txt lines into Admin → Ads; they're served at `/ads.txt`.
 
 ## Local development
 

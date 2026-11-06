@@ -153,6 +153,12 @@ export type PublicationSettings = {
   ads?: {
     /** Show labelled empty ad boxes so layouts can be reviewed. Turn off for launch. */
     previewPlaceholders?: boolean;
+    /** Served at /ads.txt (authorised sellers, from your ad networks). */
+    adsTxt?: string;
+  };
+  analytics?: {
+    /** Cloudflare Web Analytics site token (optional, cookie-free). */
+    cloudflareToken?: string;
   };
 };
 
@@ -633,6 +639,8 @@ export const homepageSectionItems = pgTable(
 // Advertising
 // ---------------------------------------------------------------------------
 
+export const adKind = pgEnum("ad_kind", ["code", "image"]);
+
 export const adPlacements = pgTable(
   "ad_placements",
   {
@@ -640,14 +648,52 @@ export const adPlacements = pgTable(
     publicationId: publicationId(),
     slot: adSlot("slot").notNull(),
     name: text("name").notNull(),
-    /** Third-party ad code. Rendered inside a sandboxed container. */
+    /** "code": an ad network tag; "image": a direct-sold banner. */
+    kind: adKind("kind").notNull().default("code"),
+    /** Third-party ad code. Rendered inside a sandboxed iframe, never inline. */
     code: text("code").notNull().default(""),
+    imageId: text("image_id").references(() => media.id, { onDelete: "set null" }),
+    clickUrl: text("click_url"),
+    altText: text("alt_text"),
+    /** Who bought it, for reports. Never shown to readers. */
+    advertiser: text("advertiser"),
     enabled: boolean("enabled").notNull().default(false),
     devices: text("devices").array().notNull().default(sql`'{mobile,desktop}'::text[]`),
+    /** Several placements in one slot rotate, weighted by this. */
+    weight: integer("weight").notNull().default(1),
+    startsAt: timestamp("starts_at", { withTimezone: true }),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [index("ad_placements_pub_slot_idx").on(t.publicationId, t.slot)],
+);
+
+export const adDailyStats = pgTable(
+  "ad_daily_stats",
+  {
+    publicationId: publicationId(),
+    placementId: text("placement_id")
+      .notNull()
+      .references(() => adPlacements.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    impressions: integer("impressions").notNull().default(0),
+    clicks: integer("clicks").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.placementId, t.day] }), index("ad_stats_pub_day_idx").on(t.publicationId, t.day)],
+);
+
+/** Page views per day by where readers came from (no cookies, no personal data). */
+export const trafficDailyStats = pgTable(
+  "traffic_daily_stats",
+  {
+    publicationId: publicationId(),
+    day: date("day").notNull(),
+    /** direct | internal | search | social | referral */
+    source: text("source").notNull(),
+    views: integer("views").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.publicationId, t.day, t.source] })],
 );
 
 // ---------------------------------------------------------------------------

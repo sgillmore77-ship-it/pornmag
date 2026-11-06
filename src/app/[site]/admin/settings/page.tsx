@@ -22,7 +22,6 @@ export default async function SettingsPage() {
           issueLabel: p.settings.issueLabel ?? "",
           footerBlurb: p.settings.footerBlurb ?? "",
           ageGateEnabled: p.settings.ageGate.enabled,
-          adPreview: !!p.settings.ads?.previewPlaceholders,
           commentsEnabled: p.settings.commentsEnabled,
           commentModeration: p.settings.commentModeration ?? "first",
           timeZone: p.settings.timeZone ?? "Europe/London",

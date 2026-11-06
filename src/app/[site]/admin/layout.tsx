@@ -31,9 +31,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { label: "People", href: "/admin/people", group: "Community" },
         ]
       : []),
+    ...(can(a.actor, "analytics.view") ? [{ label: "Analytics", href: "/admin/analytics", group: "Site" }] : []),
     ...(can(a.actor, "homepage.manage") ? [{ label: "Homepage", href: "/admin/homepage", group: "Site" }] : []),
     ...(can(a.actor, "publication.manage")
       ? [
+          { label: "Ads", href: "/admin/ads", group: "Site" },
           { label: "Settings", href: "/admin/settings", group: "Site" },
           { label: "Redirects", href: "/admin/redirects", group: "Site" },
           { label: "Activity", href: "/admin/activity", group: "Site" },
