@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   check:
@@ -30,3 +31,78 @@ jobs:
       - run: npm test
       # Builds must not need a database or any secrets.
       - run: npx opennextjs-cloudflare build
+
+  # Deploys main to Cloudflare once the checks pass. Does nothing until the
+  # Cloudflare and Supabase secrets are added (see docs/DEPLOYMENT.md).
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    concurrency: deploy-production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      HYPERDRIVE_DATABASE_URL: ${{ secrets.HYPERDRIVE_DATABASE_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+    steps:
+      - name: Check secrets
+        id: ready
+        run: |
+          missing=""
+          for k in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID HYPERDRIVE_DATABASE_URL DATABASE_URL; do
+            [ -z "${!k}" ] && missing="$missing $k"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice::Not deploying yet. Missing secrets:$missing"
+            printf '### Not deployed yet\n\nAdd these repository secrets:%s\n' "$missing" >> "$GITHUB_STEP_SUMMARY"
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.ready.outputs.go == 'true'
+        uses: actions/checkout@v4
+      - if: steps.ready.outputs.go == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.ready.outputs.go == 'true'
+        run: npm ci
+      - name: Cloudflare resources (storage, cache, database link)
+        if: steps.ready.outputs.go == 'true'
+        id: cf
+        run: node scripts/cf-setup.mjs
+      - name: Database migrations
+        if: steps.ready.outputs.go == 'true'
+        run: npx drizzle-kit migrate
+      - name: Build
+        if: steps.ready.outputs.go == 'true'
+        run: npx opennextjs-cloudflare build
+      - name: Deploy
+        if: steps.ready.outputs.go == 'true'
+        run: npx opennextjs-cloudflare deploy
+      - name: Worker secrets
+        if: steps.ready.outputs.go == 'true'
+        run: |
+          # Generated once on the first deploy and kept by Cloudflare; nobody needs to know them.
+          have=$(npx wrangler secret list --format json 2>/dev/null || echo "[]")
+          for k in BETTER_AUTH_SECRET CRON_SECRET; do
+            if ! echo "$have" | grep -q "\"$k\""; then
+              openssl rand -base64 32 | npx wrangler secret put "$k"
+              echo "Set $k"
+            fi
+          done
+          if [ -n "$RESEND_API_KEY" ]; then printf '%s' "$RESEND_API_KEY" | npx wrangler secret put RESEND_API_KEY; fi
+      - name: Smoke test
+        if: steps.ready.outputs.go == 'true'
+        run: |
+          url="${{ steps.cf.outputs.url }}"
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -A "Mozilla/5.0 deploy-check" "$url/")
+            [ "$code" = "200" ] && break
+            sleep 10
+          done
+          echo "Homepage: $code"
+          printf '### Live at %s\n\nHomepage returned %s.\n' "$url" "$code" >> "$GITHUB_STEP_SUMMARY"
+          [ "$code" = "200" ]

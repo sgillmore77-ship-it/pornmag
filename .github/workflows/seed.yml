@@ -1,0 +1,34 @@
+# One-off: fills the live database with the sample magazine content and
+# creates the admin account. WARNING: it replaces the "main" publication,
+# deleting everything in it. Run it once, before any real content exists.
+name: Load sample content
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type REPLACE to delete the "main" publication and load the samples'
+        required: true
+      layout:
+        description: Homepage layout
+        type: choice
+        options: [issue, feed]
+        default: issue
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'REPLACE'
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SEED_ADMIN_EMAIL: ${{ secrets.SEED_ADMIN_EMAIL }}
+      SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+      SEED_LAYOUT: ${{ github.event.inputs.layout }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx drizzle-kit migrate
+      - run: npx tsx scripts/seed.ts

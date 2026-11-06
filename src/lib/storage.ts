@@ -3,7 +3,7 @@ import "server-only";
 /**
  * Media storage. On Cloudflare, files go to the R2 bucket bound as
  * MEDIA_BUCKET and are served from NEXT_PUBLIC_MEDIA_BASE_URL (the bucket's
- * public domain). In local development they're written to public/media so
+ * public domain) or, if that isn't set, by the site itself at /media/…. In local development they're written to public/media so
  * `next dev` serves them at /media/…
  */
 type R2Like = { put(key: string, value: ArrayBuffer | Uint8Array, opts?: { httpMetadata?: { contentType?: string; cacheControl?: string } }): Promise<unknown> };
