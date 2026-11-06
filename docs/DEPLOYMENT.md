@@ -1,5 +1,31 @@
 # Deployment
 
+## How it deploys (current setup)
+
+Every push to `main` runs CI (`.github/workflows/ci.yml`). When the checks pass, the
+`deploy` job creates or finds the Cloudflare resources (`scripts/cf-setup.mjs`), runs
+database migrations, builds with OpenNext, deploys the Worker, generates the Worker's
+own secrets once, and checks the homepage loads. Live at
+`https://pornmag.<account-subdomain>.workers.dev` until a custom domain is attached.
+
+Repository secrets it needs (GitHub → Settings → Secrets and variables → Actions):
+
+| Secret | What |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | User token with Workers Scripts, Workers R2 Storage, D1 and Hyperdrive (Edit), Account Settings, User Details and Memberships (Read) |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
+| `HYPERDRIVE_DATABASE_URL` | Supabase **direct** connection string (used by Cloudflare) |
+| `DATABASE_URL` | Supabase **session pooler** string (used by GitHub for migrations; GitHub runners have no IPv6) |
+| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Admin login created by "Load sample content" |
+| `RESEND_API_KEY` (optional) | Enables password-reset and other emails |
+
+"Load sample content" (Actions tab, run manually, type `REPLACE`) loads the design
+samples and creates the admin account. It deletes the `main` publication first, so it
+is for an empty site only.
+
+The sections below describe the pieces in more detail.
+
+
 The site runs on Cloudflare Workers, with Supabase Postgres as the database and Cloudflare R2 for media and the page cache. These steps are needed once.
 
 ## What you need
