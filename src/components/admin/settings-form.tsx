@@ -19,6 +19,7 @@ export type SettingsState = {
   commentsEnabled: boolean;
   commentModeration: "all" | "first" | "none" | "off";
   timeZone: string;
+  videoHosts: string;
   nav: Nav[];
 };
 
@@ -38,7 +39,7 @@ export function SettingsForm({ initial, pairings }: { initial: SettingsState; pa
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          const r = await saveSettingsAction({ ...v, fontPairing: v.fontPairing as "couture", nav: v.nav.filter((n) => n.label.trim() && n.href.trim()) });
+          const r = await saveSettingsAction({ ...v, fontPairing: v.fontPairing as "couture", nav: v.nav.filter((n) => n.label.trim() && n.href.trim()), videoHosts: v.videoHosts.split(/[\s,]+/).filter(Boolean) });
           setNotice(r.ok ? { ok: true, text: "Saved. The site is updated." } : { ok: false, text: r.error });
           if (r.ok) router.refresh();
         });
@@ -131,6 +132,16 @@ export function SettingsForm({ initial, pairings }: { initial: SettingsState; pa
             </select>
           </label>
           <label className="check"><input type="checkbox" checked={v.commentsEnabled} onChange={(e) => set("commentsEnabled", e.target.checked)} />Allow comments on new stories by default</label>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head"><h2>Video players</h2></div>
+        <div className="panel-pad form-grid">
+          <label className="f"><span>Approved partner players</span>
+            <textarea value={v.videoHosts} onChange={(e) => set("videoHosts", e.target.value)} rows={3} spellCheck={false} placeholder="videotxxx.com" style={{ fontFamily: "var(--fm)", fontSize: 13 }} />
+            <span className="hint">One website per line. Video stories can embed players from these sites (as well as YouTube and Vimeo). Only add partners you have an agreement with.</span>
+          </label>
         </div>
       </section>
 

@@ -142,6 +142,11 @@ export type PublicationSettings = {
   ageGate: { enabled: boolean; provider: string | null };
   locale: string;
   timeZone?: string;
+  /**
+   * Approved partner video players (hostnames such as "videotxxx.com").
+   * Video stories can embed players from these hosts as well as YouTube/Vimeo.
+   */
+  videoHosts?: string[];
   /** Main navigation, in order. Only link to pages that exist. */
   nav?: NavLink[];
   /** Footer link columns. */

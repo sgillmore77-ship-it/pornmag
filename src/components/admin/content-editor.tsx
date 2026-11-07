@@ -411,9 +411,9 @@ export function ContentEditor({
             <div className="panel-pad form-grid">
               <label className="f">
                 <span>
-                  Video link <span className="hint">paste the normal page URL; it&apos;s converted to an embed</span>
+                  Video link <span className="hint">a YouTube or Vimeo page link, or a player link or embed code from an approved partner (Settings → Video players)</span>
                 </span>
-                <input type="url" value={v.video.url} maxLength={500} placeholder="https://…" onChange={(e) => set("video", { ...v.video, url: e.target.value })} />
+                <input type="text" value={v.video.url} maxLength={2000} placeholder="https://…" spellCheck={false} onChange={(e) => set("video", { ...v.video, url: e.target.value })} />
               </label>
               <div className="form-2">
                 <label className="f">

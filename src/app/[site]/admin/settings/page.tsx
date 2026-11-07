@@ -25,6 +25,7 @@ export default async function SettingsPage() {
           commentsEnabled: p.settings.commentsEnabled,
           commentModeration: p.settings.commentModeration ?? "first",
           timeZone: p.settings.timeZone ?? "Europe/London",
+          videoHosts: (p.settings.videoHosts ?? []).join("\n"),
           nav: p.settings.nav ?? [],
         }}
       />

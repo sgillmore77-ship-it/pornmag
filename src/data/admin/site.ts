@@ -1,3 +1,4 @@
+import { HOSTNAME_RE } from "@/lib/embeds";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db/client";
@@ -133,6 +134,12 @@ export const settingsInput = z.object({
     }
   }, "is not a valid time zone"),
   nav: z.array(navLink).max(12),
+  videoHosts: z
+    .array(z.string().trim().toLowerCase().transform((h) => h.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "")))
+    .max(30)
+    .default([])
+    .transform((hs) => [...new Set(hs.filter(Boolean))])
+    .refine((hs) => hs.every((h) => HOSTNAME_RE.test(h)), "should be website names like videotxxx.com"),
 });
 
 export async function saveSettings(db: Db, s: Site, raw: z.input<typeof settingsInput>) {
@@ -148,6 +155,7 @@ export async function saveSettings(db: Db, s: Site, raw: z.input<typeof settings
     commentsEnabled: i.commentsEnabled,
     commentModeration: i.commentModeration,
     timeZone: i.timeZone,
+    videoHosts: i.videoHosts,
     nav: i.nav,
   };
   await db

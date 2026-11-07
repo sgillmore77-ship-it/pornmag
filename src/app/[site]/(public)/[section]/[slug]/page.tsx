@@ -92,8 +92,8 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
         </header>
 
         <figure className="wrap" style={{ marginTop: "clamp(28px, 3.6cqw, 52px)", maxWidth: 1312, marginInline: "auto" }}>
-          {item.type === "video" && item.videoFull?.embedUrl && embedSrc(item.videoFull.provider, item.videoFull.embedUrl) ? (
-            <VideoPlayer src={embedSrc(item.videoFull.provider, item.videoFull.embedUrl)!} title={item.title}>
+          {item.type === "video" && item.videoFull?.embedUrl && embedSrc(item.videoFull.provider, item.videoFull.embedUrl, ctx.publication.settings.videoHosts) ? (
+            <VideoPlayer src={embedSrc(item.videoFull.provider, item.videoFull.embedUrl, ctx.publication.settings.videoHosts)!} title={item.title}>
               <Media image={item.heroImage} ratio="16/9" sizes="(min-width: 1312px) 1184px, 100vw" priority>
                 <span className="play lg" />
                 {item.videoFull.durationSeconds ? (

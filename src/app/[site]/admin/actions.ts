@@ -33,6 +33,7 @@ import {
   type ModAction,
 } from "@/data/admin/moderation";
 import type { Role } from "@/lib/permissions";
+import { approveVideoHost, importVideos, ImportError, previewFeed, type FeedPreview, type FeedVideo, type ImportResult } from "@/data/admin/video-import";
 import { deleteAd, saveAd, saveAdsSettings, type adInput, type adsSettingsInput } from "@/data/admin/ads";
 
 // ---------- Content ----------
@@ -310,4 +311,48 @@ export async function saveAdsSettingsAction(input: z.input<typeof adsSettingsInp
     await audit(a, "ads.settings", "publication", a.ctx.publication.id, { previewPlaceholders: input.previewPlaceholders });
     await purge(a);
   }, "Saved");
+}
+
+// ---------- Video import ----------
+
+export async function previewFeedAction(url: string, limit: number): Promise<ActionResult<FeedPreview>> {
+  return run(async () => {
+    const a = await requireAdmin("content.create");
+    try {
+      return await previewFeed(a.db, a.ctx.site, String(url), Number(limit) || 100);
+    } catch (e) {
+      if (e instanceof ImportError) throw new Error(e.message);
+      throw e;
+    }
+  });
+}
+
+export async function importVideosAction(videos: FeedVideo[], opts: { categoriesAsTags: boolean; tagsAsTags: boolean }): Promise<ActionResult<ImportResult>> {
+  return run(async () => {
+    const a = await requireAdmin("content.create");
+    if (!Array.isArray(videos) || videos.length > 25) throw new Error("Import up to 25 videos at a time");
+    // Re-validate everything the browser sent: only https players and thumbnails.
+    const clean = videos.map((v) => ({
+      ...v,
+      title: String(v.title ?? "").slice(0, 200),
+      description: v.description ? String(v.description).slice(0, 600) : null,
+      embedUrl: String(v.embedUrl ?? ""),
+      thumbUrl: v.thumbUrl && /^https:\/\//.test(String(v.thumbUrl)) ? String(v.thumbUrl) : null,
+      durationSeconds: Number.isFinite(Number(v.durationSeconds)) ? Number(v.durationSeconds) : null,
+      categories: (Array.isArray(v.categories) ? v.categories : []).map(String),
+      tags: (Array.isArray(v.tags) ? v.tags : []).map(String),
+    }));
+    const r = await importVideos(a.db, a.ctx.site, a.actor, clean, { categoriesAsTags: !!opts?.categoriesAsTags, tagsAsTags: !!opts?.tagsAsTags });
+    await audit(a, "video.import", "content", null, { imported: r.imported.length, skipped: r.skipped.length });
+    return r;
+  });
+}
+
+export async function approveVideoHostAction(host: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    const h = await approveVideoHost(a.db, a.ctx.site, String(host));
+    await audit(a, "settings.video_host", "publication", a.ctx.publication.id, { host: h });
+    await purge(a);
+  }, "Approved");
 }

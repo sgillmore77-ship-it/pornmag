@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, isNotNull, like, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db/client";
 import {
@@ -15,6 +15,7 @@ import {
   tags,
   videoDetails,
   type RichTextDoc,
+  publications,
 } from "@/db/schema";
 import { embedSrc, toEmbed } from "@/lib/embeds";
 import { docToText } from "@/lib/doc-text";
@@ -37,6 +38,27 @@ export function slugify(s: string): string {
 }
 
 /** Throws unless every id exists in the given table *for this publication*. */
+/**
+ * Web addresses are unique per publication. A slug the editor typed must be
+ * free; one made from the title gets -2, -3… if another story has it.
+ */
+async function availableSlug(db: Db, s: Site, base: string, ownId: string | null, explicit: boolean): Promise<string> {
+  const rows = await db
+    .select({ id: contentItems.id, slug: contentItems.slug })
+    .from(contentItems)
+    .where(and(eq(contentItems.publicationId, s.publicationId), or(eq(contentItems.slug, base), like(contentItems.slug, `${base}-%`))));
+  const taken = new Set(rows.filter((r) => r.id !== ownId).map((r) => r.slug));
+  if (!taken.has(base)) return base;
+  if (explicit) throw new Error("Slug: another story already uses this web address");
+  for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
+}
+
+/** The publication's approved partner video players (Settings → Video players). */
+export async function videoHostsFor(db: Db, s: Site): Promise<string[]> {
+  const [p] = await db.select({ settings: publications.settings }).from(publications).where(eq(publications.id, s.publicationId));
+  return p?.settings.videoHosts ?? [];
+}
+
 export async function assertOwned(
   db: Db,
   s: Site,
@@ -272,7 +294,7 @@ export const contentInput = z.object({
     .optional(),
   video: z
     .object({
-      url: z.string().trim().max(500).optional().default(""),
+      url: z.string().trim().max(2000).optional().default(""),
       durationSeconds: z.coerce.number().int().min(0).max(86_400).optional().nullable(),
       studioEntityId: optionalId,
       /** Optional rating for the video, out of 5. */
@@ -308,12 +330,13 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
 
   if (input.type === "review" && !input.review) throw new Error("Review: add a score");
   // Videos must point at an approved provider before they can go live.
-  const embed = input.type === "video" && input.video?.url ? toEmbed(input.video.url) : null;
+  const partnerHosts = input.type === "video" && input.video?.url ? await videoHostsFor(db, s) : [];
+  const embed = input.type === "video" && input.video?.url ? toEmbed(input.video.url, partnerHosts) : null;
   if (input.type === "video" && input.video?.url && !embed) throw new Error("Video: that link isn't from an approved video provider");
   if (input.type === "video" && (input.status === "published" || input.status === "scheduled") && !embed) {
     throw new Error("Video: add the video link before publishing");
   }
-  if (embed && !embedSrc(embed.provider, embed.url)) throw new Error("Video: unsupported embed");
+  if (embed && !embedSrc(embed.provider, embed.url, partnerHosts)) throw new Error("Video: unsupported embed");
 
   await Promise.all([
     assertOwned(db, s, entities, [input.review?.subjectEntityId, input.video?.studioEntityId], "studio or creator"),
@@ -323,7 +346,7 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
     assertOwned(db, s, contentItems, input.relatedIds, "related item"),
   ]);
 
-  const slug = slugify(input.slug || input.title) || `untitled-${Date.now()}`;
+  const slug = await availableSlug(db, s, slugify(input.slug || input.title) || `untitled-${Date.now()}`, input.id ?? null, !!input.slug?.trim());
   const existing = isNew
     ? null
     : (

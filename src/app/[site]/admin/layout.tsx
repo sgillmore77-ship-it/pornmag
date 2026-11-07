@@ -15,7 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const counts = can(a.actor, "comments.moderate") ? await moderationCounts(a.db, a.ctx.site) : { pending: 0, contentReports: 0 };
   const items: AdminNavItem[] = [
     { label: "Dashboard", href: "/admin" },
-    ...(can(a.actor, "content.create") ? [{ label: "Content", href: "/admin/content", group: "Publish" }, { label: "Media", href: "/admin/media", group: "Publish" }] : []),
+    ...(can(a.actor, "content.create") ? [{ label: "Content", href: "/admin/content", group: "Publish" }, { label: "Media", href: "/admin/media", group: "Publish" }, { label: "Import videos", href: "/admin/import", group: "Publish" }] : []),
     ...(can(a.actor, "taxonomy.manage")
       ? [
           { label: "Categories", href: "/admin/categories", group: "Organise" },
