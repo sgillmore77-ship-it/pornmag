@@ -5,6 +5,7 @@ import { Wordmark } from "@/components/mag/wordmark";
 import { requireAdminPage } from "@/lib/admin";
 import { can } from "@/lib/permissions";
 import { moderationCounts } from "@/data/admin/moderation";
+import { unhandledMessageCount } from "@/data/admin/pages";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 // Per-user and always fresh.
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const a = await requireAdminPage();
   const counts = can(a.actor, "comments.moderate") ? await moderationCounts(a.db, a.ctx.site) : { pending: 0, contentReports: 0 };
+  const messages = can(a.actor, "publication.manage") ? await unhandledMessageCount(a.db, a.ctx.site) : 0;
   const items: AdminNavItem[] = [
     { label: "Dashboard", href: "/admin" },
     ...(can(a.actor, "content.create") ? [{ label: "Content", href: "/admin/content", group: "Publish" }, { label: "Media", href: "/admin/media", group: "Publish" }, { label: "Import videos", href: "/admin/import", group: "Publish" }] : []),
@@ -31,10 +33,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { label: "People", href: "/admin/people", group: "Community" },
         ]
       : []),
+    ...(can(a.actor, "publication.manage") ? [{ label: `Messages${messages ? ` (${messages})` : ""}`, href: "/admin/messages", group: "Community" }] : []),
     ...(can(a.actor, "analytics.view") ? [{ label: "Analytics", href: "/admin/analytics", group: "Site" }] : []),
     ...(can(a.actor, "homepage.manage") ? [{ label: "Homepage", href: "/admin/homepage", group: "Site" }] : []),
     ...(can(a.actor, "publication.manage")
       ? [
+          { label: "Pages", href: "/admin/pages", group: "Site" },
           { label: "Ads", href: "/admin/ads", group: "Site" },
           { label: "Settings", href: "/admin/settings", group: "Site" },
           { label: "Redirects", href: "/admin/redirects", group: "Site" },

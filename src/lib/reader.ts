@@ -23,7 +23,7 @@ export async function ipHash(h?: Headers): Promise<string | null> {
   const hdrs = h ?? (await headers());
   const ip = hdrs.get("cf-connecting-ip") ?? hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   if (!ip) return null;
-  const secret = process.env.BETTER_AUTH_SECRET ?? "dev";
+  const secret = process.env.BETTER_AUTH_SECRET || "dev";
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`ip:${ip}`));
   return Array.from(new Uint8Array(sig).slice(0, 16), (b) => b.toString(16).padStart(2, "0")).join("");

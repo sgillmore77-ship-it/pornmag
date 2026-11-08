@@ -1,5 +1,6 @@
 import { getDb } from "@/db/client";
 import { contentPath, listSitemapEntries, listSitemapTaxonomy, SECTION_FOR_TYPE } from "@/data/content";
+import { listPublishedPages } from "@/data/pages";
 import { getSiteContext } from "@/lib/site-context";
 
 // Generated per request (no database access at build time) and cached at the edge.
@@ -16,12 +17,13 @@ function esc(s: string) {
 export async function GET(_req: Request, { params }: RouteContext<"/[site]/sitemap.xml">) {
   const ctx = await getSiteContext((await params).site);
   const db = await getDb();
-  const [entries, taxonomy] = await Promise.all([listSitemapEntries(db, ctx.site), listSitemapTaxonomy(db, ctx.site)]);
+  const [entries, taxonomy, pages] = await Promise.all([listSitemapEntries(db, ctx.site), listSitemapTaxonomy(db, ctx.site), listPublishedPages(db, ctx.site)]);
 
   const urls = [
     { loc: `${ctx.origin}/`, lastmod: entries[0]?.updatedAt },
     ...Object.values(SECTION_FOR_TYPE).map((s) => ({ loc: `${ctx.origin}/${s}`, lastmod: undefined })),
     ...taxonomy.categories.map((slug) => ({ loc: `${ctx.origin}/category/${slug}`, lastmod: undefined })),
+    ...pages.map((p) => ({ loc: `${ctx.origin}/${p.slug}`, lastmod: p.updatedAt })),
     ...taxonomy.tags.map((slug) => ({ loc: `${ctx.origin}/tag/${slug}`, lastmod: undefined })),
     ...entries.map((e) => ({ loc: `${ctx.origin}${contentPath(e)}`, lastmod: e.updatedAt })),
   ];

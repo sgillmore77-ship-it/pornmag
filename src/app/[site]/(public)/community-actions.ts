@@ -12,6 +12,7 @@ import {
   updateProfile,
   type ThreadState,
 } from "@/data/community";
+import { submitContactMessage } from "@/data/pages";
 import { currentReader, ipHash } from "@/lib/reader";
 
 export type Result<T = void> = { ok: true; data?: T } | { ok: false; error: string };
@@ -87,5 +88,12 @@ export async function reportContentAction(input: { contentId: string; reason: st
   return attempt(async () => {
     const { ctx, db, reader } = await currentReader();
     await reportContent(db, ctx.site, reader?.userId ?? null, input, await ipHash());
+  });
+}
+
+export async function sendContactAction(input: { name: string; email: string; topic: string; message: string; website?: string }) {
+  return attempt(async () => {
+    const { ctx, db } = await currentReader();
+    await submitContactMessage(db, ctx.site, input, await ipHash());
   });
 }

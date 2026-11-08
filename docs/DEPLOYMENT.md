@@ -85,7 +85,7 @@ Live domain: **asstomouth.net** (zone added 8 Nov 2026; registrar 123-reg, names
 
 1. Add the domain to Cloudflare (DNS).
 2. Attach it to the Worker with `routes` (`custom_domain: true`) in `wrangler.jsonc` for the bare host and `www`. Remove any existing DNS records for those names first (custom domains can't sit on top of them). The deploy token needs Zone Read, DNS Edit and Workers Routes Edit for the zone.
-3. Tell the app the domain belongs to the publication. For asstomouth.net this is migration `0004_custom_domain.sql` (rows in `publication_domains`). **Re-running the seed deletes these rows** (it replaces the "main" publication); afterwards re-run that SQL in the Supabase SQL editor.
+3. Tell the app the domain belongs to the publication. For asstomouth.net this is migration `0004_custom_domain.sql` (rows in `publication_domains`). **Re-running the seed deletes these rows** (it replaces the "main" publication); afterwards re-run that SQL in the Supabase SQL editor. The same applies to the starter pages in `0006_starter_pages.sql` (About, Advertise, Contact, Terms, Privacy, Legal).
 4. `CANONICAL_HOSTS` in `wrangler.jsonc` makes `www.<host>` 301 to `<host>` in the Worker. Responses on `*.workers.dev` carry `X-Robots-Tag: noindex` so only the real domain gets indexed.
 5. Optional: enable Image Transformations on the zone and set `NEXT_PUBLIC_IMAGE_TRANSFORMS=cloudflare`.
 6. Media domain: add a Cache Rule for `media.yourdomain.com/*` with a long edge and browser TTL (files never change under the same name).

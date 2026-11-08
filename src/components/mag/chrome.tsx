@@ -119,7 +119,12 @@ export function SiteHeader({ ctx }: { ctx: SiteContext }) {
 export function SiteFooter({ ctx }: { ctx: SiteContext }) {
   const { publication } = ctx;
   const issue = layoutOf(publication.theme) === "issue";
-  const columns = publication.settings.footer ?? [];
+  // Link columns from Settings, then the standalone pages (Admin → Pages).
+  const pageColumn = (title: string, group: "about" | "legal") => {
+    const links = ctx.footerPages.filter((p) => p.footerGroup === group).map((p) => ({ label: p.title, href: `/${p.slug}` }));
+    return links.length ? [{ title, links }] : [];
+  };
+  const columns = [...(publication.settings.footer ?? []), ...pageColumn("About", "about"), ...pageColumn("Legal", "legal")];
   const year = new Date().getFullYear();
 
   const cols = columns.length > 0 && (

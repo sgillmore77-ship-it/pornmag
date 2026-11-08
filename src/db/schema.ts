@@ -9,6 +9,7 @@
  * publication-scoped data layer in `src/db/tenant.ts`.
  */
 import { sql } from "drizzle-orm";
+import { CONTACT_TOPICS, type ContactTopic } from "../lib/contact-topics";
 import {
   bigint,
   boolean,
@@ -838,4 +839,53 @@ export const auditLogs = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("audit_logs_pub_idx").on(t.publicationId, t.createdAt)],
+);
+
+// ---------------------------------------------------------------------------
+// Standalone pages (About, Contact, Terms…) and contact messages
+// ---------------------------------------------------------------------------
+
+/** Footer column a page is listed under, if any. */
+export type PageFooterGroup = "about" | "legal";
+export { CONTACT_TOPICS, type ContactTopic };
+
+export const sitePages = pgTable(
+  "site_pages",
+  {
+    id: id(),
+    publicationId: publicationId(),
+    /** Served at /<slug>. */
+    slug: text("slug").notNull(),
+    title: text("title").notNull(),
+    /** Short intro shown under the title. */
+    standfirst: text("standfirst"),
+    body: jsonb("body").$type<RichTextDoc>(),
+    published: boolean("published").notNull().default(true),
+    footerGroup: text("footer_group").$type<PageFooterGroup>(),
+    position: integer("position").notNull().default(0),
+    /** When set, the page shows the contact form with this topic preselected. */
+    contactTopic: text("contact_topic").$type<ContactTopic>(),
+    ...seoColumns(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("site_pages_pub_slug_uq").on(t.publicationId, t.slug)],
+);
+
+export const contactMessages = pgTable(
+  "contact_messages",
+  {
+    id: id(),
+    publicationId: publicationId(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    topic: text("topic").$type<ContactTopic>().notNull(),
+    message: text("message").notNull(),
+    /** Hashed, never the raw IP. */
+    ipHash: text("ip_hash"),
+    handledAt: timestamp("handled_at", { withTimezone: true }),
+    handledBy: text("handled_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("contact_messages_pub_idx").on(t.publicationId, t.createdAt)],
 );

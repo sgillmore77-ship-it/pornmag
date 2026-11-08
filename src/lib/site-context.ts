@@ -5,6 +5,7 @@ import { cache } from "react";
 import { getDb } from "@/db/client";
 import { adPlacements } from "@/db/schema";
 import { activeAds, type AdCreative } from "@/data/ads";
+import { listFooterPages, type FooterPageLink } from "@/data/pages";
 import { getPublicationByHost, type Publication } from "@/data/publications";
 import { site, type Site } from "@/data/site";
 import { getAuth } from "./auth";
@@ -18,6 +19,8 @@ export type SiteContext = {
   /** Ad slots that render: enabled placements, or all when previewing. */
   ads: { slots: AdSlot[]; preview: boolean; creatives: Partial<Record<AdSlot, AdCreative[]>> };
   publication: Publication;
+  /** Published pages listed in the footer (About, Contact, Terms…). */
+  footerPages: FooterPageLink[];
   site: Site;
   /** Absolute origin for canonical URLs, sitemaps and structured data. */
   origin: string;
@@ -46,7 +49,8 @@ export const getSiteContext = cache(async (siteParam: string): Promise<SiteConte
   const local = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
   const preview = host.endsWith(".workers.dev");
   const canonicalHost = local || preview ? host : (publication.primaryHost ?? host);
-  const creatives = await activeAds(await getDb(), site(publication.id));
+  const db = await getDb();
+  const [creatives, footerPages] = await Promise.all([activeAds(db, site(publication.id)), listFooterPages(db, site(publication.id))]);
   const previewAds = !!publication.settings.ads?.previewPlaceholders;
   const live = Object.keys(creatives) as AdSlot[];
   return {
@@ -57,6 +61,7 @@ export const getSiteContext = cache(async (siteParam: string): Promise<SiteConte
       creatives,
     },
     publication,
+    footerPages,
     site: site(publication.id),
     origin: `${local ? "http" : "https"}://${canonicalHost}`,
   };

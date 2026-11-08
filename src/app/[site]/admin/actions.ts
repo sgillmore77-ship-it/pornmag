@@ -22,6 +22,7 @@ import { authorForUser, deleteAuthor, deleteCategory, deleteTag, saveAuthor, sav
 import type { z } from "zod";
 import type { homepageInput, redirectInput, settingsInput } from "@/data/admin/site";
 import type { authorInput, categoryInput, tagInput } from "@/data/admin/taxonomy";
+import { deleteMessage, deletePage, savePage, setMessageHandled, type pageInput } from "@/data/admin/pages";
 import { putObject } from "@/lib/storage";
 import {
   moderateComments,
@@ -355,4 +356,43 @@ export async function approveVideoHostAction(host: string): Promise<ActionResult
     await audit(a, "settings.video_host", "publication", a.ctx.publication.id, { host: h });
     await purge(a);
   }, "Approved");
+}
+
+// ---------------------------------------------------------------------------
+// Pages (About, Contact, Terms…) and contact messages
+// ---------------------------------------------------------------------------
+
+export async function savePageAction(input: z.input<typeof pageInput>): Promise<ActionResult<{ id: string }>> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    const r = await savePage(a.db, a.ctx.site, input);
+    await audit(a, input.id ? "page.update" : "page.create", "page", r.id, { slug: r.slug });
+    await purge(a);
+    return { id: r.id };
+  }, "Page saved");
+}
+
+export async function deletePageAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    const r = await deletePage(a.db, a.ctx.site, id);
+    await audit(a, "page.delete", "page", id, r);
+    await purge(a);
+  }, "Page deleted");
+}
+
+export async function setMessageHandledAction(id: string, handled: boolean): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    await setMessageHandled(a.db, a.ctx.site, id, a.user.id, handled);
+    await audit(a, handled ? "message.handle" : "message.reopen", "contact_message", id);
+  });
+}
+
+export async function deleteMessageAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("publication.manage");
+    await deleteMessage(a.db, a.ctx.site, id);
+    await audit(a, "message.delete", "contact_message", id);
+  }, "Message deleted");
 }
