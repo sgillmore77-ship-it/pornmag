@@ -1,12 +1,13 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { Db } from "@/db/client";
-import { homepageSectionItems, homepageSections } from "@/db/schema";
+import { homepageSectionItems, homepageSections, media, type PublicationSettings } from "@/db/schema";
 import {
   getCardsByIds,
   listCategories,
   listPublished,
   listTrending,
   type ContentCard,
+  type MediaRef,
 } from "./content";
 import type { Site } from "./site";
 
@@ -115,4 +116,27 @@ function defaultLimit(kind: SectionKind): number {
     newsletter: 0,
   };
   return limits[kind];
+}
+
+export type HomeBanner = { image: MediaRef; href: string | null };
+
+/** The homepage banner graphic from Settings, if it's set and the image still exists. */
+export async function getHomeBanner(db: Db, s: Site, setting: PublicationSettings["homeBanner"]): Promise<HomeBanner | null> {
+  if (!setting?.mediaId) return null;
+  const [m] = await db
+    .select({
+      id: media.id,
+      storageKey: media.storageKey,
+      alt: media.alt,
+      width: media.width,
+      height: media.height,
+      blurColor: media.blurColor,
+      caption: media.caption,
+      credit: media.credit,
+    })
+    .from(media)
+    .where(and(eq(media.id, setting.mediaId), eq(media.publicationId, s.publicationId)))
+    .limit(1);
+  if (!m) return null;
+  return { image: { ...m, alt: setting.alt || m.alt || "" }, href: setting.href || null };
 }

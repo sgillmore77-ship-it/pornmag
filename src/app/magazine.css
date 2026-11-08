@@ -475,3 +475,8 @@ html[data-age-ok] .agegate { display: none; }
 .contact-form select.cmt-input { height: 52px; margin-top: 6px; font-weight: 400; }
 .contact-form .btn { align-self: flex-start; }
 .contact-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* ---------- Homepage banner graphic (Admin → Settings) ---------- */
+.home-banner { padding-top: clamp(16px, 2.2cqw, 32px); }
+.home-banner .media { width: 100%; }
+.home-banner a { display: block; }

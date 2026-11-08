@@ -4,6 +4,6 @@
  * Production: the public URL of the Cloudflare R2 bucket (or its custom domain).
  */
 export function mediaUrl(storageKey: string): string {
-  const base = (process.env.NEXT_PUBLIC_MEDIA_BASE_URL ?? "/media").replace(/\/$/, "");
+  const base = (process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "/media").replace(/\/$/, "");
   return `${base}/${storageKey.replace(/^\//, "")}`;
 }

@@ -8,6 +8,7 @@ import {
   contentItems,
   homepageSectionItems,
   homepageSections,
+  media,
   publications,
   redirects,
   users,
@@ -15,6 +16,7 @@ import {
   type PublicationTheme,
 } from "@/db/schema";
 import { FONT_PAIRINGS } from "@/lib/theme";
+import { assertOwned } from "./content";
 import type { Site } from "../site";
 
 // ---------------------------------------------------------------------------
@@ -134,6 +136,9 @@ export const settingsInput = z.object({
     }
   }, "is not a valid time zone"),
   nav: z.array(navLink).max(12),
+  homeBannerMediaId: z.string().nullable().optional(),
+  homeBannerAlt: z.string().trim().max(160).optional(),
+  homeBannerHref: navLink.shape.href.or(z.literal("")).optional(),
   videoHosts: z
     .array(z.string().trim().toLowerCase().transform((h) => h.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "")))
     .max(30)
@@ -144,6 +149,7 @@ export const settingsInput = z.object({
 
 export async function saveSettings(db: Db, s: Site, raw: z.input<typeof settingsInput>) {
   const i = settingsInput.parse(raw);
+  if (i.homeBannerMediaId) await assertOwned(db, s, media, [i.homeBannerMediaId], "image");
   const [pub] = await db.select().from(publications).where(eq(publications.id, s.publicationId));
   if (!pub) throw new Error("Not found");
   const theme: PublicationTheme = { ...pub.theme, primaryColor: i.primaryColor, fontPairing: i.fontPairing, layout: i.layout, mode: i.mode };
@@ -157,6 +163,9 @@ export async function saveSettings(db: Db, s: Site, raw: z.input<typeof settings
     timeZone: i.timeZone,
     videoHosts: i.videoHosts,
     nav: i.nav,
+    homeBanner: i.homeBannerMediaId
+      ? { mediaId: i.homeBannerMediaId, alt: i.homeBannerAlt || undefined, href: i.homeBannerHref || undefined }
+      : undefined,
   };
   await db
     .update(publications)

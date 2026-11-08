@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveSettingsAction } from "@/app/[site]/admin/actions";
+import { MediaPicker, MediaThumb, type PickedMedia } from "./media-picker";
 
 type Nav = { label: string; href: string };
 export type SettingsState = {
@@ -21,6 +22,9 @@ export type SettingsState = {
   timeZone: string;
   videoHosts: string;
   nav: Nav[];
+  homeBanner: Pick<PickedMedia, "id" | "storageKey" | "alt" | "width" | "height"> | null;
+  homeBannerAlt: string;
+  homeBannerHref: string;
 };
 
 const SWATCHES = ["#7A1F3D", "#1F3FD6", "#0E7C66", "#E8571F", "#101216"];
@@ -30,6 +34,7 @@ export function SettingsForm({ initial, pairings }: { initial: SettingsState; pa
   const [v, setV] = useState(initial);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
+  const [picker, setPicker] = useState(false);
   const set = <K extends keyof SettingsState>(k: K, val: SettingsState[K]) => setV((x) => ({ ...x, [k]: val }));
 
   return (
@@ -39,7 +44,8 @@ export function SettingsForm({ initial, pairings }: { initial: SettingsState; pa
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          const r = await saveSettingsAction({ ...v, fontPairing: v.fontPairing as "couture", nav: v.nav.filter((n) => n.label.trim() && n.href.trim()), videoHosts: v.videoHosts.split(/[\s,]+/).filter(Boolean) });
+          const { homeBanner, ...rest } = v;
+          const r = await saveSettingsAction({ ...rest, homeBannerMediaId: homeBanner?.id ?? null, fontPairing: v.fontPairing as "couture", nav: v.nav.filter((n) => n.label.trim() && n.href.trim()), videoHosts: v.videoHosts.split(/[\s,]+/).filter(Boolean) });
           setNotice(r.ok ? { ok: true, text: "Saved. The site is updated." } : { ok: false, text: r.error });
           if (r.ok) router.refresh();
         });
@@ -102,6 +108,32 @@ export function SettingsForm({ initial, pairings }: { initial: SettingsState; pa
             </label>
           </div>
         </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head"><h2>Homepage banner</h2><span style={{ fontSize: 12, color: "var(--muted)" }}>A graphic across the top of the homepage</span></div>
+        <div className="panel-pad form-grid">
+          <div className="f">
+            <span>Banner image <span className="hint">Upload it in the picker. Wide works best, e.g. 2400 × 1040 pixels. It shows at its own shape, full width.</span></span>
+            {v.homeBanner && (
+              <div style={{ maxWidth: 560 }}>
+                <MediaThumb m={{ storageKey: v.homeBanner.storageKey, alt: v.homeBanner.alt }} ratio={v.homeBanner.width && v.homeBanner.height ? `${v.homeBanner.width}/${v.homeBanner.height}` : "12/5"} />
+              </div>
+            )}
+            <div className="toolbar">
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => setPicker(true)}>{v.homeBanner ? "Change image" : "Choose image"}</button>
+              {v.homeBanner && <button type="button" className="btn btn-sm" onClick={() => set("homeBanner", null)}>Remove banner</button>}
+            </div>
+          </div>
+          {v.homeBanner && (
+            <div className="form-2">
+              <label className="f"><span>Alt text <span className="hint">What the graphic says, for screen readers</span></span><input type="text" value={v.homeBannerAlt} maxLength={160} placeholder={v.homeBanner.alt || v.name} onChange={(e) => set("homeBannerAlt", e.target.value)} /></label>
+              <label className="f"><span>Link (optional) <span className="hint">/about, or https://…</span></span><input type="text" value={v.homeBannerHref} maxLength={200} onChange={(e) => set("homeBannerHref", e.target.value)} /></label>
+            </div>
+          )}
+          <p className="hint" style={{ margin: 0 }}>Remember to press <strong>Save settings</strong> at the bottom. It can take a few minutes to appear.</p>
+        </div>
+        <MediaPicker open={picker} onClose={() => setPicker(false)} onPick={(m: PickedMedia) => { set("homeBanner", { id: m.id, storageKey: m.storageKey, alt: m.alt, width: m.width, height: m.height }); setPicker(false); }} />
       </section>
 
       <section className="panel">

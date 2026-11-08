@@ -7,6 +7,7 @@ import { sniffImageType, storageKeyFor } from "@/data/admin/media";
 import { findRedirect, normalisePath, saveHomepage, saveRedirect, saveSettings } from "@/data/admin/site";
 import { authorForUser, deleteAuthor, saveCategory, saveTag } from "@/data/admin/taxonomy";
 import { getPublishedBySlug, listPublished } from "@/data/content";
+import { getHomeBanner } from "@/data/homepage";
 import { site } from "@/data/site";
 import type { Actor } from "@/lib/permissions";
 import { makeContent, makePublication, setupTestDb } from "./helpers/db";
@@ -169,6 +170,28 @@ describe("site management", () => {
     const [p] = await db.select().from(t.publications).where(eq(t.publications.id, pub.id));
     expect(p.theme.layout).toBe("feed");
     expect(p.theme.primaryColor).toBe("#123456");
+  });
+
+  it("sets, checks and removes the homepage banner", async () => {
+    const base = { name: "X", primaryColor: "#123456", fontPairing: "couture" as const, layout: "feed" as const, mode: "system" as const, ageGateEnabled: true, commentsEnabled: true, timeZone: "Europe/London", nav: [] };
+    const [mine] = await db.insert(t.media).values({ publicationId: pub.id, storageKey: `${pub.id}/2026/11/banner.png`, mimeType: "image/png", alt: "Logo art", width: 2400, height: 1040 }).returning();
+    const [theirs] = await db.insert(t.media).values({ publicationId: other.id, storageKey: `${other.id}/2026/11/b.png`, mimeType: "image/png" }).returning();
+    const s = site(pub.id);
+    const readSettings = async () => (await db.select().from(t.publications).where(eq(t.publications.id, pub.id)))[0].settings;
+
+    await expect(saveSettings(db, s, { ...base, homeBannerMediaId: theirs.id })).rejects.toThrow(/Unknown image/);
+    await expect(saveSettings(db, s, { ...base, homeBannerMediaId: mine.id, homeBannerHref: "javascript:alert(1)" })).rejects.toThrow();
+
+    await saveSettings(db, s, { ...base, homeBannerMediaId: mine.id, homeBannerAlt: "", homeBannerHref: "/about" });
+    const set = (await readSettings()).homeBanner;
+    expect(set).toEqual({ mediaId: mine.id, href: "/about" });
+    expect(await getHomeBanner(db, s, set)).toMatchObject({ href: "/about", image: { id: mine.id, alt: "Logo art", width: 2400, height: 1040 } });
+    // Another publication can't show it, and a deleted image means no banner.
+    expect(await getHomeBanner(db, site(other.id), set)).toBeNull();
+    expect(await getHomeBanner(db, s, { mediaId: "missing" })).toBeNull();
+
+    await saveSettings(db, s, { ...base, homeBannerMediaId: null });
+    expect((await readSettings()).homeBanner).toBeUndefined();
   });
 
   it("normalises redirect paths and blocks dangerous targets", async () => {

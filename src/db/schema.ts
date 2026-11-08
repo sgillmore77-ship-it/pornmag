@@ -154,6 +154,8 @@ export type PublicationSettings = {
   footer?: { title: string; links: NavLink[] }[];
   /** Short description shown under the footer wordmark. */
   footerBlurb?: string;
+  /** Banner graphic at the top of the homepage (an image in the media library). */
+  homeBanner?: { mediaId: string; alt?: string; href?: string };
   /** Dateline for the "issue" layout, e.g. "Issue 047 · The After Dark Issue". */
   issueLabel?: string;
   ads?: {
