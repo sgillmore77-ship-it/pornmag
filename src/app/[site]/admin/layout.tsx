@@ -5,6 +5,7 @@ import { Wordmark } from "@/components/mag/wordmark";
 import { requireAdminPage } from "@/lib/admin";
 import { can } from "@/lib/permissions";
 import { moderationCounts } from "@/data/admin/moderation";
+import { GeoPass } from "@/components/admin/geo-pass";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 // Per-user and always fresh.
@@ -45,6 +46,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="adm">
+      <GeoPass />
       <aside className="adm-side" aria-label="Admin">
         <Link href="/admin">
           <Wordmark name={a.ctx.publication.name} />

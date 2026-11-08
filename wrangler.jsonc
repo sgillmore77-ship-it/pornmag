@@ -30,7 +30,13 @@
 
   // Plain settings. Secrets (BETTER_AUTH_SECRET, CRON_SECRET, RESEND_API_KEY)
   // are set by the deploy workflow, never written here.
-  "vars": { "DEFAULT_PUBLICATION_SLUG": "main", "EMAIL_FROM": "Magazine <no-reply@example.com>" },
+  "vars": {
+    "DEFAULT_PUBLICATION_SLUG": "main",
+    "EMAIL_FROM": "Magazine <no-reply@example.com>",
+    // Two-letter country codes shown a "not available" notice instead of the
+    // site (staff can still sign in and view it). GB until UK age checks exist.
+    "BLOCKED_COUNTRIES": "GB"
+  },
 
   // Publish scheduled stories every 5 minutes.
   "triggers": { "crons": ["*/5 * * * *"] }

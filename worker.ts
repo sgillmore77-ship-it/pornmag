@@ -1,14 +1,21 @@
 /**
- * Cloudflare Worker entry: the OpenNext app, plus a Cron handler that
+ * Cloudflare Worker entry: country blocking, the OpenNext app, plus a Cron handler that
  * publishes scheduled stories. The cron calls the app's own endpoint so the
  * work runs with the same code, bindings and cache purging as the site.
  */
 import { default as app } from "./.open-next/worker.js";
+import { geoBlock, parseCountries } from "./src/lib/geo-block";
 
-type Env = { CRON_SECRET?: string; WORKER_SELF_REFERENCE: { fetch: typeof fetch } };
+type Env = { CRON_SECRET?: string; BETTER_AUTH_SECRET?: string; BLOCKED_COUNTRIES?: string; WORKER_SELF_REFERENCE: { fetch: typeof fetch } };
 
 export default {
-  fetch: app.fetch,
+  // Country blocking runs first, so cached pages are never served to blocked visitors.
+  async fetch(request: Request, env: Env, ctx: unknown) {
+    const country = (request as Request & { cf?: { country?: string } }).cf?.country;
+    const blocked = await geoBlock(request, country, parseCountries(env.BLOCKED_COUNTRIES), env.BETTER_AUTH_SECRET);
+    if (blocked) return blocked;
+    return (app.fetch as (r: Request, e: Env, c: unknown) => Promise<Response>)(request, env, ctx);
+  },
   async scheduled(_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) {
     if (!env.CRON_SECRET) {
       console.error("CRON_SECRET is not set; scheduled publishing is disabled");
