@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { approveVideoHostAction, importVideosAction, previewFeedAction } from "@/app/[site]/admin/actions";
 import type { FeedPreview, ImportResult } from "@/data/admin/video-import";
 
@@ -17,6 +17,14 @@ export function VideoImporter({ canApprove }: { canApprove: boolean }) {
   const [result, setResult] = useState<ImportResult | null>(null);
   const [pending, start] = useTransition();
   const [filter, setFilter] = useState("");
+  const [watching, setWatching] = useState<FeedPreview["videos"][number] | null>(null);
+
+  useEffect(() => {
+    if (!watching) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setWatching(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [watching]);
 
   const load = () =>
     start(async () => {
@@ -37,6 +45,45 @@ export function VideoImporter({ canApprove }: { canApprove: boolean }) {
 
   return (
     <div className="form-grid">
+      {watching && (
+        <div className="vimp-modal" role="dialog" aria-modal="true" aria-label={`Preview: ${watching.title}`} onClick={() => setWatching(null)}>
+          <div className="vimp-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="vimp-modal-head">
+              <strong>{watching.title}</strong>
+              <button type="button" className="btn btn-sm" onClick={() => setWatching(null)} autoFocus>
+                Close
+              </button>
+            </div>
+            <div className="vimp-frame">
+              <iframe
+                src={watching.embedUrl}
+                title={watching.title}
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                allowFullScreen
+                sandbox="allow-scripts allow-same-origin allow-presentation"
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
+            <div className="toolbar" style={{ justifyContent: "space-between" }}>
+              <span className="sub">
+                {fmt(watching.durationSeconds)} · {watching.categories.join(", ")}
+              </span>
+              {watching.approved && !watching.imported && (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    toggle(watching.sourceId);
+                    setWatching(null);
+                  }}
+                >
+                  {picked.includes(watching.sourceId) ? "Unselect" : "Select this video"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <section className="panel">
         <div className="panel-pad form-grid">
           <label className="f">
@@ -100,8 +147,13 @@ export function VideoImporter({ canApprove }: { canApprove: boolean }) {
                           start(async () => {
                             const r = await approveVideoHostAction(h);
                             if (!r.ok) return setError(r.error);
-                            const p = await previewFeedAction(url, 200);
-                            if (p.ok) setPreview(p.data ?? null);
+                            setPreview((p) =>
+                              p && {
+                                ...p,
+                                unapprovedHosts: p.unapprovedHosts.filter((x) => x !== h),
+                                videos: p.videos.map((v) => (v.embedHost === h ? { ...v, approved: true } : v)),
+                              },
+                            );
                           })
                         }
                       >
@@ -136,43 +188,44 @@ export function VideoImporter({ canApprove }: { canApprove: boolean }) {
                 {pending && picked.length ? "Importing…" : "Import as drafts"}
               </button>
             </div>
-            <div className="tbl-wrap">
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th style={{ width: 32 }}>
-                      <input
-                        type="checkbox"
-                        aria-label="Select the first 25 shown"
-                        checked={selectable.length > 0 && selectable.slice(0, 25).every((v) => picked.includes(v.sourceId))}
-                        onChange={(e) => setPicked(e.target.checked ? selectable.slice(0, 25).map((v) => v.sourceId) : [])}
-                      />
-                    </th>
-                    <th>Title</th>
-                    <th>Length</th>
-                    <th>Categories</th>
-                    <th>Thumbnail</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shown.map((v) => (
-                    <tr key={v.sourceId} style={{ opacity: v.approved && !v.imported ? 1 : 0.55 }}>
-                      <td>
-                        <input type="checkbox" aria-label={`Select ${v.title}`} disabled={!v.approved || v.imported} checked={picked.includes(v.sourceId)} onChange={() => toggle(v.sourceId)} />
-                      </td>
-                      <td>
-                        {v.title}
-                        {v.imported && <span className="status status-published" style={{ marginLeft: 8 }}>imported</span>}
-                        {v.models.length > 0 && <div className="sub">{v.models.join(", ")}</div>}
-                      </td>
-                      <td>{fmt(v.durationSeconds)}</td>
-                      <td style={{ fontSize: 13, color: "var(--muted)" }}>{v.categories.slice(0, 4).join(", ")}</td>
-                      <td style={{ fontSize: 13, color: "var(--muted)" }}>{v.thumbUrl ? "yes" : "none"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="toolbar">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={selectable.length > 0 && selectable.slice(0, 25).every((v) => picked.includes(v.sourceId))}
+                  onChange={(e) => setPicked(e.target.checked ? selectable.slice(0, 25).map((v) => v.sourceId) : [])}
+                />
+                Select the first 25 shown
+              </label>
             </div>
+            <ul className="vimp-grid">
+              {shown.map((v) => {
+                const disabled = !v.approved || v.imported;
+                const on = picked.includes(v.sourceId);
+                return (
+                  <li key={v.sourceId} className={`vimp-card${on ? " is-on" : ""}${disabled ? " is-off" : ""}`}>
+                    <button type="button" className="vimp-thumb" onClick={() => setWatching(v)} aria-label={`Preview ${v.title}`}>
+                      {v.thumbUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- admin-only preview straight from the partner; imports copy it to our storage
+                        <img src={v.thumbUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                      ) : (
+                        <span className="vimp-none">No thumbnail</span>
+                      )}
+                      <span className="vimp-play" aria-hidden>▶ Preview</span>
+                      <span className="vimp-dur">{fmt(v.durationSeconds)}</span>
+                    </button>
+                    <label className="vimp-meta">
+                      <input type="checkbox" disabled={disabled} checked={on} onChange={() => toggle(v.sourceId)} aria-label={`Select ${v.title}`} />
+                      <span>
+                        <strong>{v.title}</strong>
+                        {v.imported && <span className="status status-published" style={{ marginLeft: 6 }}>imported</span>}
+                        <span className="sub">{[v.models.join(", "), v.categories.slice(0, 3).join(", ")].filter(Boolean).join(" · ")}</span>
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </section>
       )}
