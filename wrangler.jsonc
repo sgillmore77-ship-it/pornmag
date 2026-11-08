@@ -33,6 +33,15 @@
   // CANONICAL_HOSTS: www.<host> redirects to <host> (comma separated).
   "vars": { "DEFAULT_PUBLICATION_SLUG": "main", "EMAIL_FROM": "Magazine <no-reply@example.com>", "CANONICAL_HOSTS": "asstomouth.net" },
 
+  // The real domain. www redirects to the bare host (CANONICAL_HOSTS above).
+  // Keep the workers.dev address for staff and the deploy smoke test (it
+  // sends noindex). Explicit because adding routes can turn it off.
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "asstomouth.net", "custom_domain": true },
+    { "pattern": "www.asstomouth.net", "custom_domain": true }
+  ],
+
   // Publish scheduled stories every 5 minutes.
   "triggers": { "crons": ["*/5 * * * *"] }
 }
