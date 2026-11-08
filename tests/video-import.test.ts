@@ -4,7 +4,7 @@ import type { Db } from "@/db/client";
 import * as t from "@/db/schema";
 import { saveContent } from "@/data/admin/content";
 import { saveSettings } from "@/data/admin/site";
-import { approveVideoHost, checkFeedUrl, clearFeedCache, imageSize, importTiming, importVideos, parseFeed, previewFeed, retryAfterMs } from "@/data/admin/video-import";
+import { approveVideoHost, checkFeedUrl, clearFeedCache, feedLabel, forgetRecentFeed, imageSize, importTiming, importVideos, MAX_RECENT_FEEDS, parseFeed, previewFeed, rememberRecentFeed, retryAfterMs } from "@/data/admin/video-import";
 import { site, type Site } from "@/data/site";
 import { embedSrc, iframeSrc, PARTNER, toEmbed } from "@/lib/embeds";
 import type { Actor } from "@/lib/permissions";
@@ -239,5 +239,40 @@ describe("busy partner servers", () => {
     mockFetch(() => (calls++, new Response("nope", { status: 404 })));
     await expect(previewFeed(db, s, url)).rejects.toThrow("The partner's server answered 404.");
     expect(calls).toBe(1);
+  });
+});
+
+describe("recent feeds", () => {
+  const read = async (pub: Site) => (await db.select().from(t.publications).where(eq(t.publications.id, pub.publicationId)))[0].settings.recentFeeds ?? [];
+
+  it("names feeds by site and categories", () => {
+    expect(feedLabel("https://txxx.com/admin/feeds/promo/?promo=1")).toBe("txxx.com · all videos");
+    expect(feedLabel("https://www.txxx.com/admin/feeds/promo/?promo=1&categories=Asian%2CJapanese")).toBe("txxx.com · Asian, Japanese");
+    expect(feedLabel("https://txxx.com/f/?categories=A,B,C,D,E")).toBe("txxx.com · A, B, C +2");
+  });
+
+  it("keeps the newest first, without duplicates, up to the limit, per publication", async () => {
+    const urls = Array.from({ length: MAX_RECENT_FEEDS + 2 }, (_, i) => `https://txxx.com/admin/feeds/promo/?promo=49251&n=${i}`);
+    for (const u of urls) await rememberRecentFeed(db, s, u);
+    await rememberRecentFeed(db, s, urls[5]);
+    const list = await read(s);
+    expect(list).toHaveLength(MAX_RECENT_FEEDS);
+    expect(list[0].url).toBe(urls[5]);
+    expect(new Set(list.map((f) => f.url)).size).toBe(MAX_RECENT_FEEDS);
+    expect(await read(other)).toEqual([]);
+    await forgetRecentFeed(db, s, urls[5]);
+    expect((await read(s)).some((f) => f.url === urls[5])).toBe(false);
+  });
+
+  it("refuses links that aren't public https feeds", async () => {
+    await expect(rememberRecentFeed(db, s, "http://txxx.com/feed")).rejects.toThrow();
+    await expect(rememberRecentFeed(db, s, "https://localhost/feed")).rejects.toThrow();
+  });
+
+  it("survives saving Settings", async () => {
+    const before = await read(s);
+    const base = { name: "Vimp", primaryColor: "#7A1F3D", fontPairing: "couture" as const, layout: "issue" as const, mode: "system" as const, ageGateEnabled: true, commentsEnabled: true, timeZone: "Europe/London", nav: [] };
+    await saveSettings(db, s, base);
+    expect(await read(s)).toEqual(before);
   });
 });

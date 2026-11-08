@@ -2,13 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
-import { approveVideoHostAction, importVideosAction, previewFeedAction } from "@/app/[site]/admin/actions";
+import { approveVideoHostAction, forgetRecentFeedAction, importVideosAction, previewFeedAction } from "@/app/[site]/admin/actions";
 import type { FeedPreview, ImportResult } from "@/data/admin/video-import";
+import { feedLabel } from "@/lib/feed-label";
 
 const fmt = (s: number | null) => (s == null ? "—" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`);
 
-export function VideoImporter({ canApprove }: { canApprove: boolean }) {
-  const [url, setUrl] = useState("");
+type RecentFeed = { url: string; label: string; usedAt: string };
+
+export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: boolean; recentFeeds?: RecentFeed[] }) {
+  const [url, setUrl] = useState(recentFeeds[0]?.url ?? "");
+  const [recent, setRecent] = useState(recentFeeds);
   const [preview, setPreview] = useState<FeedPreview | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
   const [cats, setCats] = useState(true);
@@ -26,13 +30,25 @@ export function VideoImporter({ canApprove }: { canApprove: boolean }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [watching]);
 
-  const load = () =>
+  const load = (feedUrl = url) =>
     start(async () => {
       setError(null);
       setResult(null);
       setPicked([]);
-      const r = await previewFeedAction(url, 200);
-      if (r.ok) setPreview(r.data ?? null);
+      const r = await previewFeedAction(feedUrl, 200);
+      if (r.ok) {
+        setPreview(r.data ?? null);
+        setRecent((list) => {
+          let entry: RecentFeed;
+          try {
+            const u = new URL(feedUrl.trim()).toString();
+            entry = list.find((f) => f.url === u) ?? { url: u, label: feedLabel(u), usedAt: new Date().toISOString() };
+          } catch {
+            return list;
+          }
+          return [entry, ...list.filter((f) => f.url !== entry.url)].slice(0, 8);
+        });
+      }
       else {
         setPreview(null);
         setError(r.error);
@@ -94,10 +110,46 @@ export function VideoImporter({ canApprove }: { canApprove: boolean }) {
             </span>
           </label>
           <div className="toolbar">
-            <button className="btn btn-primary" disabled={pending || !url.trim()} onClick={load}>
+            <button className="btn btn-primary" disabled={pending || !url.trim()} onClick={() => load()}>
               {pending && !preview ? "Loading…" : "Load videos"}
             </button>
           </div>
+          {recent.length > 0 && (
+            <div className="f">
+              <span>Your recent feeds <span className="hint">Click one to load it</span></span>
+              <div className="toolbar" style={{ flexWrap: "wrap", gap: 8 }}>
+                {recent.map((f) => (
+                  <span key={f.url} className="vimp-recent">
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${f.url === url ? "btn-primary" : "btn-outline"}`}
+                      disabled={pending}
+                      title={f.url}
+                      onClick={() => {
+                        setUrl(f.url);
+                        load(f.url);
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      aria-label={`Forget ${f.label}`}
+                      title="Remove from this list"
+                      disabled={pending}
+                      onClick={() => {
+                        setRecent((list) => list.filter((x) => x.url !== f.url));
+                        void forgetRecentFeedAction(f.url);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           {error && <p className="notice notice-err" role="alert">{error}</p>}
         </div>
       </section>

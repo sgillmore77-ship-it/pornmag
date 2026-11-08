@@ -34,7 +34,7 @@ import {
   type ModAction,
 } from "@/data/admin/moderation";
 import type { Role } from "@/lib/permissions";
-import { approveVideoHost, importVideos, ImportError, previewFeed, type FeedPreview, type FeedVideo, type ImportResult } from "@/data/admin/video-import";
+import { approveVideoHost, forgetRecentFeed, importVideos, ImportError, previewFeed, rememberRecentFeed, type FeedPreview, type FeedVideo, type ImportResult } from "@/data/admin/video-import";
 import { deleteAd, saveAd, saveAdsSettings, type adInput, type adsSettingsInput } from "@/data/admin/ads";
 
 // ---------- Content ----------
@@ -320,7 +320,9 @@ export async function previewFeedAction(url: string, limit: number): Promise<Act
   return run(async () => {
     const a = await requireAdmin("content.create");
     try {
-      return await previewFeed(a.db, a.ctx.site, String(url), Number(limit) || 100);
+      const preview = await previewFeed(a.db, a.ctx.site, String(url), Number(limit) || 100);
+      await rememberRecentFeed(a.db, a.ctx.site, String(url));
+      return preview;
     } catch (e) {
       if (e instanceof ImportError) throw new Error(e.message);
       throw e;
@@ -395,4 +397,11 @@ export async function deleteMessageAction(id: string): Promise<ActionResult> {
     await deleteMessage(a.db, a.ctx.site, id);
     await audit(a, "message.delete", "contact_message", id);
   }, "Message deleted");
+}
+
+export async function forgetRecentFeedAction(url: string): Promise<ActionResult> {
+  return run(async () => {
+    const a = await requireAdmin("content.create");
+    await forgetRecentFeed(a.db, a.ctx.site, String(url));
+  });
 }

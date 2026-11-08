@@ -4,6 +4,7 @@ import { contentItems, publications, videoDetails } from "@/db/schema";
 import type { Site } from "@/data/site";
 import { HOSTNAME_RE, iframeSrc, toEmbed } from "@/lib/embeds";
 import type { Actor } from "@/lib/permissions";
+import { feedLabel } from "@/lib/feed-label";
 import { putObject } from "@/lib/storage";
 import { ALLOWED_IMAGE_TYPES, createMediaRow, MAX_UPLOAD_BYTES, sniffImageType, storageKeyFor } from "./media";
 import { saveContent, videoHostsFor } from "./content";
@@ -376,3 +377,28 @@ export async function approveVideoHost(db: Db, s: Site, host: string): Promise<s
   await db.update(publications).set({ settings: { ...p.settings, videoHosts: hosts } }).where(eq(publications.id, s.publicationId));
   return h;
 }
+
+// ---------------------------------------------------------------------------
+// Recent feeds (shown as one-click buttons on Import videos)
+// ---------------------------------------------------------------------------
+
+export const MAX_RECENT_FEEDS = 8;
+
+/** Puts a feed link at the top of the publication's recent list. */
+export async function rememberRecentFeed(db: Db, s: Site, feedUrl: string, now = new Date()) {
+  const url = checkFeedUrl(feedUrl).toString();
+  const [pub] = await db.select({ settings: publications.settings }).from(publications).where(eq(publications.id, s.publicationId));
+  if (!pub) return;
+  const rest = (pub.settings.recentFeeds ?? []).filter((f) => f.url !== url);
+  const recentFeeds = [{ url, label: feedLabel(url), usedAt: now.toISOString() }, ...rest].slice(0, MAX_RECENT_FEEDS);
+  await db.update(publications).set({ settings: { ...pub.settings, recentFeeds } }).where(eq(publications.id, s.publicationId));
+}
+
+export async function forgetRecentFeed(db: Db, s: Site, feedUrl: string) {
+  const [pub] = await db.select({ settings: publications.settings }).from(publications).where(eq(publications.id, s.publicationId));
+  if (!pub) return;
+  const recentFeeds = (pub.settings.recentFeeds ?? []).filter((f) => f.url !== feedUrl);
+  await db.update(publications).set({ settings: { ...pub.settings, recentFeeds } }).where(eq(publications.id, s.publicationId));
+}
+
+export { feedLabel };
