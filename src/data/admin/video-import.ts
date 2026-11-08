@@ -147,9 +147,45 @@ export function checkFeedUrl(input: string): URL {
   return u;
 }
 
+/** Partner servers that are busy (429) or briefly unavailable (503) are retried, waiting as they ask. */
+const RETRY_STATUSES = new Set([429, 503]);
+/** Longest we wait for one retry, and in total, so an import never hangs. */
+const MAX_RETRY_WAIT_MS = 8_000;
+const MAX_TOTAL_WAIT_MS = 12_000;
+
+/** Overridable in tests so they don't really wait. */
+export const importTiming = { sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)), thumbGapMs: 250 };
+
+/** Seconds or an HTTP date in Retry-After, as milliseconds (default 2s). */
+export function retryAfterMs(header: string | null, now = Date.now()): number {
+  if (!header) return 2_000;
+  const secs = Number(header);
+  const ms = Number.isFinite(secs) ? secs * 1000 : Date.parse(header) - now;
+  return Number.isFinite(ms) && ms > 0 ? ms : 2_000;
+}
+
+function busyMessage(status: number): string {
+  return status === 429
+    ? "The partner's server is limiting how often feeds can be downloaded right now. Wait a few minutes, then try again."
+    : `The partner's server answered ${status}.`;
+}
+
+async function fetchWithRetry(url: string, timeoutMs: number): Promise<Response> {
+  let waited = 0;
+  for (;;) {
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; MagazineImporter/1.0)" } });
+    if (res.ok || !RETRY_STATUSES.has(res.status)) return res;
+    const wait = retryAfterMs(res.headers.get("retry-after"));
+    if (wait > MAX_RETRY_WAIT_MS || waited + wait > MAX_TOTAL_WAIT_MS) return res;
+    await res.body?.cancel();
+    await importTiming.sleep(wait);
+    waited += wait;
+  }
+}
+
 async function fetchCapped(url: string, maxBytes: number, timeoutMs: number): Promise<{ bytes: Uint8Array; contentType: string }> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; MagazineImporter/1.0)" } });
-  if (!res.ok) throw new ImportError(`The partner's server answered ${res.status}.`);
+  const res = await fetchWithRetry(url, timeoutMs);
+  if (!res.ok) throw new ImportError(busyMessage(res.status));
   const declared = Number(res.headers.get("content-length") ?? 0);
   if (declared > maxBytes) throw new ImportError("That file is too large.");
   const reader = res.body?.getReader();
@@ -175,15 +211,42 @@ async function fetchCapped(url: string, maxBytes: number, timeoutMs: number): Pr
   return { bytes, contentType: res.headers.get("content-type") ?? "" };
 }
 
+/**
+ * Recently downloaded feeds, so pressing "Load videos" again (or changing the
+ * filter) doesn't ask the partner again. Per server instance, best effort.
+ */
+const feedCache = new Map<string, { text: string; at: number }>();
+const FEED_FRESH_MS = 5 * 60_000;
+const FEED_STALE_MS = 60 * 60_000;
+function rememberFeed(key: string, text: string) {
+  feedCache.set(key, { text, at: Date.now() });
+  for (const k of feedCache.keys()) {
+    if (feedCache.size <= 10) break;
+    feedCache.delete(k);
+  }
+}
+export function clearFeedCache() {
+  feedCache.clear();
+}
+
 export async function previewFeed(db: Db, s: Site, feedUrl: string, limit = 100): Promise<FeedPreview> {
   const u = checkFeedUrl(feedUrl);
+  const key = u.toString();
+  const cached = feedCache.get(key);
   let text: string;
-  try {
-    const { bytes } = await fetchCapped(u.toString(), 8 * 1024 * 1024, 20_000);
-    text = new TextDecoder().decode(bytes);
-  } catch (e) {
-    if (e instanceof ImportError) throw e;
-    throw new ImportError("Couldn't download the feed. Check the link opens in your browser.");
+  if (cached && Date.now() - cached.at < FEED_FRESH_MS) {
+    text = cached.text;
+  } else {
+    try {
+      const { bytes } = await fetchCapped(key, 8 * 1024 * 1024, 20_000);
+      text = new TextDecoder().decode(bytes);
+      rememberFeed(key, text);
+    } catch (e) {
+      // If the partner is busy, a copy from the last hour is better than nothing.
+      if (cached && Date.now() - cached.at < FEED_STALE_MS) text = cached.text;
+      else if (e instanceof ImportError) throw e;
+      else throw new ImportError("Couldn't download the feed. Check the link opens in your browser.");
+    }
   }
   const { videos, skippedRows } = parseFeed(text);
   const shown = videos.slice(0, Math.min(500, Math.max(1, limit)));
@@ -266,6 +329,8 @@ export async function importVideos(
 
     let heroImageId: string | null = null;
     if (v.thumbUrl) {
+      // Space thumbnail downloads out a little so the partner's image server doesn't turn us away.
+      if (out.imported.length || out.skipped.length) await importTiming.sleep(importTiming.thumbGapMs);
       try {
         checkFeedUrl(v.thumbUrl);
         const { bytes } = await fetchCapped(v.thumbUrl, MAX_UPLOAD_BYTES, 15_000);

@@ -4,7 +4,7 @@ import type { Db } from "@/db/client";
 import * as t from "@/db/schema";
 import { saveContent } from "@/data/admin/content";
 import { saveSettings } from "@/data/admin/site";
-import { approveVideoHost, checkFeedUrl, imageSize, importVideos, parseFeed, previewFeed } from "@/data/admin/video-import";
+import { approveVideoHost, checkFeedUrl, clearFeedCache, imageSize, importTiming, importVideos, parseFeed, previewFeed, retryAfterMs } from "@/data/admin/video-import";
 import { site, type Site } from "@/data/site";
 import { embedSrc, iframeSrc, PARTNER, toEmbed } from "@/lib/embeds";
 import type { Actor } from "@/lib/permissions";
@@ -38,7 +38,14 @@ beforeAll(async () => {
   other = site((await makePublication(db, "vimp-other")).id);
   await db.insert(t.users).values({ id: "vi-ed", name: "Ed", email: "vi-ed@example.com" });
 });
-afterEach(() => vi.unstubAllGlobals());
+// Don't really wait between retries or thumbnails.
+const waits: number[] = [];
+importTiming.sleep = async (ms: number) => void waits.push(ms);
+afterEach(() => {
+  vi.unstubAllGlobals();
+  clearFeedCache();
+  waits.length = 0;
+});
 afterAll(async () => close());
 
 describe("partner players", () => {
@@ -182,5 +189,56 @@ describe("web addresses", () => {
     // Re-saving keeps its own address.
     expect((await saveContent(db, other, editor, { ...base, id: b.id, slug: "same-title-2" })).slug).toBe("same-title-2");
     await expect(saveContent(db, other, editor, { ...base, slug: "same-title" })).rejects.toThrow(/already uses/);
+  });
+});
+
+describe("busy partner servers", () => {
+  const url = "https://txxx.com/admin/feeds/promo/?promo=49251&busy=1";
+
+  it("reads Retry-After as seconds or a date", () => {
+    expect(retryAfterMs("3")).toBe(3000);
+    expect(retryAfterMs(null)).toBe(2000);
+    expect(retryAfterMs("nonsense")).toBe(2000);
+    expect(retryAfterMs(new Date(10_000).toUTCString(), 4_000)).toBe(6000);
+  });
+
+  it("waits and retries when the partner says it's busy", async () => {
+    let calls = 0;
+    mockFetch(() => (++calls < 3 ? new Response("slow down", { status: 429, headers: { "retry-after": "2" } }) : new Response(FEED)));
+    const p = await previewFeed(db, s, url);
+    expect(p.videos).toHaveLength(2);
+    expect(calls).toBe(3);
+    expect(waits).toEqual([2000, 2000]);
+  });
+
+  it("gives a plain explanation when it stays busy, without waiting for ages", async () => {
+    mockFetch(() => new Response("slow down", { status: 429, headers: { "retry-after": "120" } }));
+    await expect(previewFeed(db, s, url)).rejects.toThrow(/limiting how often feeds can be downloaded/);
+    expect(waits).toEqual([]);
+    let calls = 0;
+    mockFetch(() => (calls++, new Response("slow down", { status: 429 })));
+    await expect(previewFeed(db, s, url)).rejects.toThrow(/Wait a few minutes/);
+    expect(waits.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(12_000);
+  });
+
+  it("doesn't download the same feed again within a few minutes, and falls back to the last copy if busy", async () => {
+    let calls = 0;
+    mockFetch(() => (calls++, new Response(FEED)));
+    await previewFeed(db, s, url);
+    await previewFeed(db, s, url);
+    expect(calls).toBe(1);
+    // Older than the fresh window: tries again, and uses the saved copy when refused.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 10 * 60_000);
+    mockFetch(() => new Response("slow down", { status: 429, headers: { "retry-after": "999" } }));
+    expect((await previewFeed(db, s, url)).videos).toHaveLength(2);
+    vi.useRealTimers();
+  });
+
+  it("other errors aren't retried", async () => {
+    let calls = 0;
+    mockFetch(() => (calls++, new Response("nope", { status: 404 })));
+    await expect(previewFeed(db, s, url)).rejects.toThrow("The partner's server answered 404.");
+    expect(calls).toBe(1);
   });
 });
