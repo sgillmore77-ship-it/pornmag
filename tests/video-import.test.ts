@@ -215,8 +215,7 @@ describe("busy partner servers", () => {
     mockFetch(() => new Response("slow down", { status: 429, headers: { "retry-after": "120" } }));
     await expect(previewFeed(db, s, url)).rejects.toThrow(/limiting how often feeds can be downloaded/);
     expect(waits).toEqual([]);
-    let calls = 0;
-    mockFetch(() => (calls++, new Response("slow down", { status: 429 })));
+    mockFetch(() => new Response("slow down", { status: 429 }));
     await expect(previewFeed(db, s, url)).rejects.toThrow(/Wait a few minutes/);
     expect(waits.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(12_000);
   });
