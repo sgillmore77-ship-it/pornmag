@@ -81,13 +81,16 @@ The site is now live at `pornmag.<your-subdomain>.workers.dev`. Search engines a
 
 ## 3. Your domain
 
+Live domain: **asstomouth.net** (zone added 8 Nov 2026; registrar 123-reg, nameservers `achiel` / `selah.ns.cloudflare.com`).
+
 1. Add the domain to Cloudflare (DNS).
-2. Workers → pornmag → Settings → Domains & Routes → add `yourdomain.com` (and `www`).
-3. Tell the app the domain belongs to the publication. Either re-seed with `SEED_DOMAIN=yourdomain.com`, or insert a row into `publication_domains` with `is_primary = true`.
-4. Optional: enable Image Transformations on the zone and set `NEXT_PUBLIC_IMAGE_TRANSFORMS=cloudflare`.
-5. Media domain: add a Cache Rule for `media.yourdomain.com/*` with a long edge and browser TTL (files never change under the same name).
-6. Optional: Cloudflare → Web Analytics → add the site, then paste the token into Admin → Ads → "Cloudflare Web Analytics token". The built-in counts work without it.
-7. Ad networks: paste their ads.txt lines into Admin → Ads; they're served at `/ads.txt`.
+2. Attach it to the Worker with `routes` (`custom_domain: true`) in `wrangler.jsonc` for the bare host and `www`. Remove any existing DNS records for those names first (custom domains can't sit on top of them). The deploy token needs Zone Read, DNS Edit and Workers Routes Edit for the zone.
+3. Tell the app the domain belongs to the publication. For asstomouth.net this is migration `0004_custom_domain.sql` (rows in `publication_domains`). **Re-running the seed deletes these rows** (it replaces the "main" publication); afterwards re-run that SQL in the Supabase SQL editor.
+4. `CANONICAL_HOSTS` in `wrangler.jsonc` makes `www.<host>` 301 to `<host>` in the Worker. Responses on `*.workers.dev` carry `X-Robots-Tag: noindex` so only the real domain gets indexed.
+5. Optional: enable Image Transformations on the zone and set `NEXT_PUBLIC_IMAGE_TRANSFORMS=cloudflare`.
+6. Media domain: add a Cache Rule for `media.yourdomain.com/*` with a long edge and browser TTL (files never change under the same name).
+7. Optional: Cloudflare → Web Analytics → add the site, then paste the token into Admin → Ads → "Cloudflare Web Analytics token". The built-in counts work without it.
+8. Ad networks: paste their ads.txt lines into Admin → Ads; they're served at `/ads.txt`.
 
 ## Local development
 
