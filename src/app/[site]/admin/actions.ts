@@ -34,7 +34,7 @@ import {
   type ModAction,
 } from "@/data/admin/moderation";
 import type { Role } from "@/lib/permissions";
-import { approveVideoHost, forgetRecentFeed, importVideos, ImportError, previewFeed, rememberRecentFeed, type FeedPreview, type FeedVideo, type ImportResult } from "@/data/admin/video-import";
+import { approveVideoHost, forgetRecentFeed, importVideos, ImportError, previewFeed, previewFeedText, rememberRecentFeed, type FeedPreview, type FeedVideo, type ImportResult } from "@/data/admin/video-import";
 import { deleteAd, saveAd, saveAdsSettings, type adInput, type adsSettingsInput } from "@/data/admin/ads";
 
 // ---------- Content ----------
@@ -403,5 +403,17 @@ export async function forgetRecentFeedAction(url: string): Promise<ActionResult>
   return run(async () => {
     const a = await requireAdmin("content.create");
     await forgetRecentFeed(a.db, a.ctx.site, String(url));
+  });
+}
+
+export async function previewFeedFileAction(text: string, limit: number): Promise<ActionResult<FeedPreview>> {
+  return run(async () => {
+    const a = await requireAdmin("content.create");
+    try {
+      return await previewFeedText(a.db, a.ctx.site, String(text), Number(limit) || 100);
+    } catch (e) {
+      if (e instanceof ImportError) throw new Error(e.message);
+      throw e;
+    }
   });
 }

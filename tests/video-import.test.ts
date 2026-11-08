@@ -4,7 +4,7 @@ import type { Db } from "@/db/client";
 import * as t from "@/db/schema";
 import { saveContent } from "@/data/admin/content";
 import { saveSettings } from "@/data/admin/site";
-import { approveVideoHost, checkFeedUrl, clearFeedCache, feedLabel, forgetRecentFeed, imageSize, importTiming, importVideos, MAX_RECENT_FEEDS, parseFeed, previewFeed, rememberRecentFeed, retryAfterMs } from "@/data/admin/video-import";
+import { approveVideoHost, checkFeedUrl, clearFeedCache, feedLabel, forgetRecentFeed, imageSize, importTiming, importVideos, MAX_RECENT_FEEDS, MAX_FEED_FILE_CHARS, parseFeed, previewFeed, previewFeedText, rememberRecentFeed, retryAfterMs } from "@/data/admin/video-import";
 import { site, type Site } from "@/data/site";
 import { embedSrc, iframeSrc, PARTNER, toEmbed } from "@/lib/embeds";
 import type { Actor } from "@/lib/permissions";
@@ -274,5 +274,19 @@ describe("recent feeds", () => {
     const base = { name: "Vimp", primaryColor: "#7A1F3D", fontPairing: "couture" as const, layout: "issue" as const, mode: "system" as const, ageGateEnabled: true, commentsEnabled: true, timeZone: "Europe/London", nav: [] };
     await saveSettings(db, s, base);
     expect(await read(s)).toEqual(before);
+  });
+});
+
+describe("uploading a feed file", () => {
+  it("previews a file the editor's browser downloaded", async () => {
+    const p = await previewFeedText(db, s, FEED);
+    expect(p.videos).toHaveLength(2);
+    expect(p.skippedRows).toBeGreaterThan(0);
+  });
+
+  it("explains files that aren't feeds", async () => {
+    await expect(previewFeedText(db, s, "   ")).rejects.toThrow(/empty/);
+    await expect(previewFeedText(db, s, "<!DOCTYPE html><html><body>Login</body></html>")).rejects.toThrow(/web page, not a feed/);
+    await expect(previewFeedText(db, s, "x".repeat(MAX_FEED_FILE_CHARS + 1))).rejects.toThrow(/too large/);
   });
 });

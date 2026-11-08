@@ -249,6 +249,20 @@ export async function previewFeed(db: Db, s: Site, feedUrl: string, limit = 100)
       else throw new ImportError("Couldn't download the feed. Check the link opens in your browser.");
     }
   }
+  return previewFeedText(db, s, text, limit);
+}
+
+/** Largest feed file accepted by upload (a 500-video TubeCorporate feed is ~300 KB). */
+export const MAX_FEED_FILE_CHARS = 900_000;
+
+/**
+ * Preview from feed text the editor's own browser downloaded, for when the
+ * partner limits downloads from the site's server.
+ */
+export async function previewFeedText(db: Db, s: Site, text: string, limit = 100): Promise<FeedPreview> {
+  if (typeof text !== "string" || !text.trim()) throw new ImportError("That file is empty.");
+  if (text.length > MAX_FEED_FILE_CHARS) throw new ImportError("That file is too large. In TubeCorporate, set the feed limit to 500 videos or fewer.");
+  if (/^\s*<(!doctype|html)/i.test(text)) throw new ImportError("That's a web page, not a feed file. Open the feed link and save what it shows (it should start with \"Embed code\").");
   const { videos, skippedRows } = parseFeed(text);
   const shown = videos.slice(0, Math.min(500, Math.max(1, limit)));
   const hosts = await videoHostsFor(db, s);

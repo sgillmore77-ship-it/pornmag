@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
-import { approveVideoHostAction, forgetRecentFeedAction, importVideosAction, previewFeedAction } from "@/app/[site]/admin/actions";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { approveVideoHostAction, forgetRecentFeedAction, importVideosAction, previewFeedAction, previewFeedFileAction } from "@/app/[site]/admin/actions";
 import type { FeedPreview, ImportResult } from "@/data/admin/video-import";
 import { feedLabel } from "@/lib/feed-label";
 
@@ -13,6 +13,8 @@ type RecentFeed = { url: string; label: string; usedAt: string };
 export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: boolean; recentFeeds?: RecentFeed[] }) {
   const [url, setUrl] = useState(recentFeeds[0]?.url ?? "");
   const [recent, setRecent] = useState(recentFeeds);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<FeedPreview | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
   const [cats, setCats] = useState(true);
@@ -36,6 +38,7 @@ export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: bo
       setResult(null);
       setPicked([]);
       const r = await previewFeedAction(feedUrl, 200);
+      setBusy(!r.ok && /limiting|answered 4|answered 5|Couldn't download/i.test(r.error));
       if (r.ok) {
         setPreview(r.data ?? null);
         setRecent((list) => {
@@ -151,6 +154,51 @@ export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: bo
             </div>
           )}
           {error && <p className="notice notice-err" role="alert">{error}</p>}
+          <div className={busy ? "notice" : undefined} style={busy ? undefined : { borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+            <p style={{ margin: 0, fontWeight: 600 }}>{busy ? "Load it through your own browser instead:" : "Partner refusing downloads? Use your own browser:"}</p>
+            <ol style={{ margin: "8px 0 12px", paddingLeft: 20, listStyle: "decimal", lineHeight: 1.6, fontSize: 14 }}>
+              <li>
+                {url.trim() && /^https:\/\//.test(url.trim()) ? (
+                  <a href={url.trim()} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>Open the feed link ↗</a>
+                ) : (
+                  "Open your feed link"
+                )}{" "}
+                in a new tab. Your browser downloads the file, or shows lines of text (then press Ctrl+S / ⌘S to save it).
+              </li>
+              <li>Upload that file here:</li>
+            </ol>
+            <input
+              ref={fileInput}
+              type="file"
+              accept=".csv,.txt,text/csv,text/plain"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (!f) return;
+                start(async () => {
+                  setError(null);
+                  setResult(null);
+                  setPicked([]);
+                  if (f.size > 900_000) {
+                    setPreview(null);
+                    return setError("That file is too large. In TubeCorporate, set the feed limit to 500 videos or fewer.");
+                  }
+                  const r = await previewFeedFileAction(await f.text(), 500);
+                  if (r.ok) {
+                    setPreview(r.data ?? null);
+                    setBusy(false);
+                  } else {
+                    setPreview(null);
+                    setError(r.error);
+                  }
+                });
+              }}
+            />
+            <button type="button" className="btn btn-outline btn-sm" disabled={pending} onClick={() => fileInput.current?.click()}>
+              Upload feed file
+            </button>
+          </div>
         </div>
       </section>
 
