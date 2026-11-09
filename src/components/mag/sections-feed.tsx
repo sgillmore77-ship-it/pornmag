@@ -25,7 +25,7 @@ function Hero({ section, ctx, first }: Props<"hero">) {
     <section className="wrap" aria-label={section.title ?? "Cover story"} style={{ paddingTop: "clamp(20px, 2.8cqw, 40px)", paddingBottom: "clamp(36px, 4cqw, 64px)" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "clamp(20px, 3.3cqw, 56px)", alignItems: "stretch" }}>
         <Link href={href} tabIndex={-1} aria-hidden style={{ flex: "1.65 1 560px" }}>
-          <Media image={item.heroImage} ratio="4/3" sizes="(min-width: 1024px) 62vw, 100vw" priority={first} />
+          <Media image={item.heroImage} ratio="4/3" sizes="(min-width: 1024px) 62vw, 100vw" priority={first}>{item.video && <span className="play" />}</Media>
         </Link>
         <div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: "clamp(14px, 1.6cqw, 22px)", paddingBottom: 4 }}>
           <div className="row-kicker label-mono" style={{ gap: 14 }}>
@@ -51,7 +51,7 @@ function Hero({ section, ctx, first }: Props<"hero">) {
 function StoryCard({ item, ctx }: { item: ContentCard; ctx: SiteContext }) {
   return (
     <Link href={contentPath(item)} className="card story-card">
-      <Media image={item.heroImage} ratio="3/2" sizes="(min-width: 1024px) 30vw, (min-width: 700px) 45vw, 100vw" className="sc-img" />
+      <Media image={item.heroImage} ratio="3/2" sizes="(min-width: 1024px) 30vw, (min-width: 700px) 45vw, 100vw" className="sc-img">{item.video && <span className="play" />}</Media>
       <div className="sc-kicker">
         <KickerDate item={item} tz={tzOf(ctx)} />
       </div>
@@ -85,6 +85,7 @@ function Reviews({ section }: Props<"featured_reviews">) {
         {section.items.map((r) => (
           <Link key={r.id} href={contentPath(r)} className="card" style={{ display: "flex", flexDirection: "column", gap: 10, scrollSnapAlign: "start" }}>
             <Media image={r.heroImage} ratio="4/5" sizes="(min-width: 1024px) 23vw, 70vw" label="top-right">
+              {r.video && <span className="play" />}
               {r.review && <ScoreBlock score={r.review.score} scoreMax={r.review.scoreMax} />}
             </Media>
             {r.review?.badge && (
@@ -129,7 +130,7 @@ function Trending({ section, ctx }: Props<"trending">) {
                   <span className="meta">{trendingMeta(t)}</span>
                 </span>
                 <Media image={t.heroImage} ratio="1/1" sizes="96px" label="none">
-                  {t.type === "video" && <span className="play sm" />}
+                  {t.video && <span className="play sm" />}
                 </Media>
               </Link>
             </li>
@@ -196,6 +197,7 @@ function Picks({ section }: Props<"editors_picks">) {
         {section.items.map((p) => (
           <Link key={p.id} href={contentPath(p)} className="card" style={{ display: "flex", flexDirection: "column", gap: 12, scrollSnapAlign: "start" }}>
             <Media image={p.heroImage} ratio="4/5" sizes="(min-width: 1024px) 31vw, 75vw">
+              {p.video && <span className="play" />}
               <span className="chip chip-brand" style={{ position: "absolute", top: 0, left: 0 }}>
                 Editor&apos;s pick
               </span>

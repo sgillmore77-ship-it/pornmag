@@ -9,12 +9,22 @@ import { embedSrc } from "@/lib/embeds";
  * Nothing is injected as raw HTML; unknown node types render their children
  * only, and links and embeds are checked against allowlists.
  */
-export function RichText({ doc, insertAfterParagraph }: { doc: RichTextDoc | null; insertAfterParagraph?: { n: number; node: ReactNode } }) {
+export function RichText({
+  doc,
+  insertAfterParagraph,
+  videoHosts = [],
+}: {
+  doc: RichTextDoc | null;
+  insertAfterParagraph?: { n: number; node: ReactNode };
+  /** The publication's approved partner video players (Settings → Video players). */
+  videoHosts?: readonly string[];
+}) {
   if (!doc?.content?.length) return null;
   let paragraphs = 0;
   const out: ReactNode[] = [];
+  const hosts = [...videoHosts];
   doc.content.forEach((n, i) => {
-    out.push(renderNode(n, i));
+    out.push(renderNode(n, i, hosts));
     if (n.type === "paragraph" && ++paragraphs === insertAfterParagraph?.n) {
       out.push(<div key="inserted">{insertAfterParagraph.node}</div>);
     }
@@ -22,8 +32,9 @@ export function RichText({ doc, insertAfterParagraph }: { doc: RichTextDoc | nul
   return <div className="prose-body">{out}</div>;
 }
 
-function children(node: RichTextNode): ReactNode {
-  return node.content?.map((n, i) => renderNode(n, i));
+/** `hosts`: the publication's approved partner video players, for embeds. */
+function children(node: RichTextNode, hosts: string[]): ReactNode {
+  return node.content?.map((n, i) => renderNode(n, i, hosts));
 }
 
 function str(v: unknown): string | undefined {
@@ -83,29 +94,29 @@ function renderText(node: RichTextNode, key: number): ReactNode {
   return <span key={key}>{out}</span>;
 }
 
-function renderNode(node: RichTextNode, key: number): ReactNode {
+function renderNode(node: RichTextNode, key: number, hosts: string[]): ReactNode {
   switch (node.type) {
     case "text":
       return renderText(node, key);
     case "paragraph":
-      return <p key={key}>{children(node)}</p>;
+      return <p key={key}>{children(node, hosts)}</p>;
     case "heading": {
       const level = Math.min(Math.max(num(node.attrs?.level) ?? 2, 2), 4);
       const H = `h${level}` as "h2" | "h3" | "h4";
-      return <H key={key}>{children(node)}</H>;
+      return <H key={key}>{children(node, hosts)}</H>;
     }
     case "bulletList":
-      return <ul key={key}>{children(node)}</ul>;
+      return <ul key={key}>{children(node, hosts)}</ul>;
     case "orderedList":
-      return <ol key={key}>{children(node)}</ol>;
+      return <ol key={key}>{children(node, hosts)}</ol>;
     case "listItem":
-      return <li key={key}>{children(node)}</li>;
+      return <li key={key}>{children(node, hosts)}</li>;
     case "blockquote":
-      return <blockquote key={key}>{children(node)}</blockquote>;
+      return <blockquote key={key}>{children(node, hosts)}</blockquote>;
     case "pullQuote":
       return (
         <figure key={key} className="pull-quote">
-          <blockquote>{children(node)}</blockquote>
+          <blockquote>{children(node, hosts)}</blockquote>
           {str(node.attrs?.attribution) && <figcaption>{str(node.attrs?.attribution)}</figcaption>}
         </figure>
       );
@@ -134,7 +145,7 @@ function renderNode(node: RichTextNode, key: number): ReactNode {
       );
     }
     case "embed": {
-      const src = embedSrc(str(node.attrs?.provider), str(node.attrs?.url));
+      const src = embedSrc(str(node.attrs?.provider), str(node.attrs?.url), hosts);
       if (!src) return null;
       return (
         <figure key={key} className="embed">
@@ -156,17 +167,17 @@ function renderNode(node: RichTextNode, key: number): ReactNode {
       return (
         <div key={key} className="table-wrap">
           <table>
-            <tbody>{children(node)}</tbody>
+            <tbody>{children(node, hosts)}</tbody>
           </table>
         </div>
       );
     case "tableRow":
-      return <tr key={key}>{children(node)}</tr>;
+      return <tr key={key}>{children(node, hosts)}</tr>;
     case "tableHeader":
-      return <th key={key}>{children(node)}</th>;
+      return <th key={key}>{children(node, hosts)}</th>;
     case "tableCell":
-      return <td key={key}>{children(node)}</td>;
+      return <td key={key}>{children(node, hosts)}</td>;
     default:
-      return node.content ? <div key={key}>{children(node)}</div> : null;
+      return node.content ? <div key={key}>{children(node, hosts)}</div> : null;
   }
 }

@@ -32,7 +32,7 @@ function slugify(s: string) {
     .slice(0, 80);
 }
 
-export function PageEditor({ initial }: { initial: PageEditorInitial | null }) {
+export function PageEditor({ initial, videoHosts = [] }: { initial: PageEditorInitial | null; videoHosts?: string[] }) {
   const router = useRouter();
   const [v, setV] = useState({
     title: initial?.title ?? "",
@@ -106,7 +106,7 @@ export function PageEditor({ initial }: { initial: PageEditorInitial | null }) {
       </div>
 
       <div className="panel panel-pad">
-        <RichEditor initial={initial?.body ?? null} onChange={setBody} />
+        <RichEditor initial={initial?.body ?? null} onChange={setBody} videoHosts={videoHosts} />
       </div>
 
       <div className="panel panel-pad form-grid">

@@ -33,7 +33,7 @@ export function SitePageView({ ctx, page }: { ctx: SiteContext; page: SitePage }
         )}
       </header>
       <div className="wrap" style={{ maxWidth: 820, marginInline: "auto", marginTop: "clamp(24px, 3cqw, 40px)", paddingBottom: "clamp(48px, 6cqw, 96px)" }}>
-        <RichText doc={page.body} />
+        <RichText doc={page.body} videoHosts={ctx.publication.settings.videoHosts} />
         {page.contactTopic && (
           <section aria-labelledby="contact-form-h" style={{ marginTop: 40, borderTop: "2px solid var(--ink)", paddingTop: 24 }}>
             <h2 id="contact-form-h" className="disp" style={{ fontSize: "calc(clamp(24px, 2.4cqw, 32px) * var(--dsz))" }}>

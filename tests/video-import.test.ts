@@ -290,3 +290,37 @@ describe("uploading a feed file", () => {
     await expect(previewFeedText(db, s, "x".repeat(MAX_FEED_FILE_CHARS + 1))).rejects.toThrow(/too large/);
   });
 });
+
+describe("lead videos on every story type", () => {
+  const PLAYER = "https://videotxxx.com/embed/777/?promo=49251";
+  const story = (type: "article" | "review" | "news", over: Record<string, unknown> = {}) => ({
+    type,
+    title: `Lead video ${type} ${Math.random().toString(36).slice(2, 7)}`,
+    body: { type: "doc" as const, content: [] },
+    status: "draft" as const,
+    ...(type === "review" ? { review: { score: 4, pros: [], cons: [] } } : {}),
+    ...over,
+  });
+
+  it("saves an approved partner video on features, reviews and news", async () => {
+    await approveVideoHost(db, s, "videotxxx.com");
+    for (const type of ["article", "review", "news"] as const) {
+      const saved = await saveContent(db, s, editor, story(type, { video: { url: `<iframe src="${PLAYER}"></iframe>`, durationSeconds: 600 } }));
+      const [v] = await db.select().from(t.videoDetails).where(eq(t.videoDetails.contentId, saved.id));
+      expect(v).toMatchObject({ provider: PARTNER, embedUrl: PLAYER, durationSeconds: 600 });
+    }
+  });
+
+  it("refuses unapproved players, but doesn't require a video outside video stories", async () => {
+    await expect(saveContent(db, other, editor, story("article", { video: { url: PLAYER } }))).rejects.toThrow(/approved/);
+    const plain = await saveContent(db, s, editor, story("article", { status: "published", video: { url: "" } }));
+    expect(await db.select().from(t.videoDetails).where(eq(t.videoDetails.contentId, plain.id))).toEqual([]);
+  });
+
+  it("removes the video when it's cleared, and a rating only comes from reviews or video stories", async () => {
+    const saved = await saveContent(db, s, editor, story("article", { video: { url: PLAYER, score: 4 } }));
+    expect(await db.select().from(t.reviewDetails).where(eq(t.reviewDetails.contentId, saved.id))).toEqual([]);
+    await saveContent(db, s, editor, { ...story("article"), id: saved.id, title: "Cleared", video: undefined });
+    expect(await db.select().from(t.videoDetails).where(eq(t.videoDetails.contentId, saved.id))).toEqual([]);
+  });
+});

@@ -123,6 +123,7 @@ export default async function EditContent({ params, searchParams }: { params: Pr
         relatable={relatable}
         entities={ents.map((e) => ({ id: e.id, name: e.name, kind: e.kind }))}
         canPublish={can(a.actor, "content.publish")}
+        videoHosts={a.ctx.publication.settings.videoHosts ?? []}
         canDelete={can(a.actor, "content.edit.any")}
         origin={a.ctx.origin}
         siteName={a.ctx.publication.name}

@@ -199,7 +199,10 @@ export function ContentEditor({
   canDelete,
   origin,
   siteName,
+  videoHosts = [],
 }: {
+  /** Approved partner players, for the Embed button. */
+  videoHosts?: string[];
   initial: EditorInitial;
   categories: Option[];
   authors: Option[];
@@ -282,13 +285,14 @@ export function ContentEditor({
                 affiliateUrl: v.review.affiliateUrl,
               }
             : undefined,
+        // Every story type can carry a video; only video stories require one.
         video:
-          v.type === "video"
+          v.type === "video" || v.video.url.trim()
             ? {
                 url: v.video.url,
                 durationSeconds: parseDuration(v.video.duration),
                 studioEntityId: v.video.studioEntityId,
-                score: v.video.score === "" ? null : Number(v.video.score),
+                score: v.type === "video" && v.video.score !== "" ? Number(v.video.score) : null,
               }
             : undefined,
       });
@@ -402,11 +406,13 @@ export function ContentEditor({
           </section>
         )}
 
-        {v.type === "video" && (
+        {(
           <section className="panel">
             <div className="panel-head">
-              <h2>Video</h2>
-              <span style={{ fontSize: 12, color: "var(--muted)" }}>Embedded from an approved provider</span>
+              <h2>{v.type === "video" ? "Video" : "Lead video"}</h2>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                {v.type === "video" ? "Embedded from an approved provider" : "Optional: plays at the top of the story, above the text"}
+              </span>
             </div>
             <div className="panel-pad form-grid">
               <label className="f">
@@ -433,19 +439,21 @@ export function ContentEditor({
                     ))}
                   </select>
                 </label>
-                <label className="f">
-                  <span>
-                    Rating <span className="hint">optional</span>
-                  </span>
-                  <select value={v.video.score} onChange={(e) => set("video", { ...v.video, score: e.target.value })}>
-                    <option value="">No rating</option>
-                    {Array.from({ length: 11 }, (_, i) => (10 - i) / 2).map((n) => (
-                      <option key={n} value={String(n)}>
-                        {n.toFixed(1)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {v.type === "video" && (
+                  <label className="f">
+                    <span>
+                      Rating <span className="hint">optional</span>
+                    </span>
+                    <select value={v.video.score} onChange={(e) => set("video", { ...v.video, score: e.target.value })}>
+                      <option value="">No rating</option>
+                      {Array.from({ length: 11 }, (_, i) => (10 - i) / 2).map((n) => (
+                        <option key={n} value={String(n)}>
+                          {n.toFixed(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
               </div>
               <span className="hint" style={{ fontSize: 12, color: "var(--muted)" }}>
                 The hero image is used as the video&apos;s poster and thumbnail.
@@ -455,6 +463,7 @@ export function ContentEditor({
         )}
 
         <RichEditor
+          videoHosts={videoHosts}
           initial={initial.body}
           onChange={(d) => {
             setBody(d);

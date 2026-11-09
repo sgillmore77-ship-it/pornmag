@@ -148,7 +148,7 @@ function isoDuration(seconds: number) {
 /** VideoObject only when there is a real thumbnail and an embed: both are required. */
 export function videoJsonLd(ctx: SiteContext, item: ContentPage): JsonLd | null {
   const thumb = shareable(item.heroImage) ?? shareable(item.ogImage);
-  if (item.type !== "video" || !item.videoFull?.embedUrl || !thumb) return null;
+  if (!item.videoFull?.embedUrl || !thumb) return null;
   return {
     "@context": "https://schema.org",
     "@type": "VideoObject",

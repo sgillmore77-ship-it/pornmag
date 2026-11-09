@@ -330,9 +330,11 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
 
   if (input.type === "review" && !input.review) throw new Error("Review: add a score");
   // Videos must point at an approved provider before they can go live.
-  const partnerHosts = input.type === "video" && input.video?.url ? await videoHostsFor(db, s) : [];
-  const embed = input.type === "video" && input.video?.url ? toEmbed(input.video.url, partnerHosts) : null;
-  if (input.type === "video" && input.video?.url && !embed) throw new Error("Video: that link isn't from an approved video provider");
+  // Any story type can carry a lead video; video stories must have one to go live.
+  const videoUrl = input.video?.url?.trim() || null;
+  const partnerHosts = videoUrl ? await videoHostsFor(db, s) : [];
+  const embed = videoUrl ? toEmbed(videoUrl, partnerHosts) : null;
+  if (videoUrl && !embed) throw new Error("Video: that link isn't from an approved video provider");
   if (input.type === "video" && (input.status === "published" || input.status === "scheduled") && !embed) {
     throw new Error("Video: add the video link before publishing");
   }
@@ -448,7 +450,7 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
       });
     }
     await tx.delete(videoDetails).where(eq(videoDetails.contentId, id!));
-    if (input.type === "video") {
+    if (input.type === "video" || embed) {
       await tx.insert(videoDetails).values({
         contentId: id!,
         provider: embed?.provider ?? "pending",
@@ -460,7 +462,7 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
 
     // Entities power "related content": link whoever this piece covers.
     await tx.delete(contentEntities).where(eq(contentEntities.contentId, id!));
-    const linked = [...new Set([rating?.subjectEntityId, input.type === "video" ? input.video?.studioEntityId : null].filter((x): x is string => !!x))];
+    const linked = [...new Set([rating?.subjectEntityId, input.type === "video" || embed ? input.video?.studioEntityId : null].filter((x): x is string => !!x))];
     if (linked.length) await tx.insert(contentEntities).values(linked.map((entityId) => ({ contentId: id!, entityId })));
 
     return { id: id!, slug, status: input.status, wasLive: existing?.status === "published", isNew };

@@ -55,7 +55,7 @@ function Latest({ section, ctx }: Props<"latest">) {
       <SectionHead title={section.title ?? "This week"} link={{ href: "/features", label: "Latest stories →" }} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: "clamp(28px, 3cqw, 44px)" }}>
         <Link href={contentPath(lead)} className="card" style={{ flex: "1.45 1 480px", display: "flex", flexDirection: "column", gap: 14 }}>
-          <Media image={lead.heroImage} ratio="4/5" sizes="(min-width: 1024px) 40vw, 100vw" />
+          <Media image={lead.heroImage} ratio="4/5" sizes="(min-width: 1024px) 40vw, 100vw">{lead.video && <span className="play" />}</Media>
           <span style={{ marginTop: 6 }}>
             <KickerDate item={lead} tz={tzOf(ctx)} sep />
           </span>
@@ -68,7 +68,7 @@ function Latest({ section, ctx }: Props<"latest">) {
           <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "clamp(28px, 3cqw, 40px)" }}>
             {mid.map((s) => (
               <Link key={s.id} href={contentPath(s)} className="card" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <Media image={s.heroImage} ratio="3/2" sizes="(min-width: 1024px) 25vw, 100vw" />
+                <Media image={s.heroImage} ratio="3/2" sizes="(min-width: 1024px) 25vw, 100vw">{s.video && <span className="play" />}</Media>
                 <span style={{ marginTop: 4 }}>
                   <KickerDate item={s} tz={tzOf(ctx)} sep />
                 </span>
@@ -110,7 +110,7 @@ function Reviews({ section }: Props<"featured_reviews">) {
     <section className="wrap sec-tint">
       <SectionHead title={section.title ?? "Reviews"} link={{ href: "/reviews", label: "All reviews →" }} />
       <Link href={contentPath(lead)} className="card" style={{ display: "flex", flexWrap: "wrap", gap: "clamp(24px, 4cqw, 64px)", alignItems: "center", paddingBottom: "clamp(32px, 4cqw, 56px)", borderBottom: "1px solid var(--line)" }}>
-        <Media image={lead.heroImage} ratio="4/3" sizes="(min-width: 1024px) 50vw, 100vw" style={{ flex: "1.2 1 460px" }} />
+        <Media image={lead.heroImage} ratio="4/3" sizes="(min-width: 1024px) 50vw, 100vw" style={{ flex: "1.2 1 460px" }}>{lead.video && <span className="play" />}</Media>
         <div style={{ flex: "1 1 340px", display: "flex", flexDirection: "column", gap: 18 }}>
           {r && <ScoreRing score={r.score} scoreMax={r.scoreMax} badge={r.badge} />}
           <h3 className="disp card-title" style={{ lineHeight: 1, fontSize: "calc(clamp(40px, 4.4cqw, 64px) * var(--dsz))" }}>
@@ -267,7 +267,7 @@ function Picks({ section }: Props<"editors_picks">) {
             <span className="label-mono">
               No. {i + 1} — <span className="kicker">{kickerOf(p)}</span>
             </span>
-            <Media image={p.heroImage} ratio="3/4" sizes="(min-width: 1024px) 30vw, 100vw" />
+            <Media image={p.heroImage} ratio="3/4" sizes="(min-width: 1024px) 30vw, 100vw">{p.video && <span className="play" />}</Media>
             <h3 className="disp card-title" style={{ lineHeight: 1.02, fontSize: "calc(clamp(28px, 2.5cqw, 36px) * var(--dsz))" }}>
               {p.title}
             </h3>

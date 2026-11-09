@@ -96,3 +96,25 @@ describe("host segment", () => {
     expect(hostToSegment("a_b.com")).toBeNull();
   });
 });
+
+describe("videos inside story text", () => {
+  it("plays approved partner players only, and only for the publication that approved them", async () => {
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { RichText } = await import("@/components/rich-text");
+    const doc = {
+      type: "doc" as const,
+      content: [
+        { type: "embed", attrs: { provider: "partner", url: "https://videotxxx.com/embed/9/?promo=49251" } },
+        { type: "embed", attrs: { provider: "partner", url: "https://evil.example/embed/9/" } },
+      ],
+    };
+    const approved = renderToStaticMarkup(createElement(RichText, { doc, videoHosts: ["videotxxx.com"] }));
+    expect(approved).toContain('src="https://videotxxx.com/embed/9/?promo=49251"');
+    expect(approved).not.toContain("evil.example");
+    const notApproved = renderToStaticMarkup(createElement(RichText, { doc }));
+    expect(notApproved).not.toContain("<iframe");
+    // The list from one render doesn't leak into the next.
+    expect(renderToStaticMarkup(createElement(RichText, { doc }))).not.toContain("<iframe");
+  });
+});

@@ -13,6 +13,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
     <>
       <PageHead title={page ? `Edit: ${page.title}` : "New page"} sub={page ? `Live at /${page.slug}` : undefined} />
       <PageEditor
+        videoHosts={a.ctx.publication.settings.videoHosts ?? []}
         initial={
           page
             ? {

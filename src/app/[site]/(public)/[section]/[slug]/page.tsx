@@ -59,6 +59,8 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
       <JsonLd
         data={[
           item.type === "review" ? reviewJsonLd(ctx, item) : item.type === "video" ? videoJsonLd(ctx, item) : articleJsonLd(ctx, item),
+          // Features, reviews and news with a lead video also describe the video.
+          item.type !== "video" ? videoJsonLd(ctx, item) : null,
           breadcrumbJsonLd(ctx, crumbs),
         ].filter((x): x is Record<string, unknown> => !!x)}
       />
@@ -92,7 +94,7 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
         </header>
 
         <figure className="wrap" style={{ marginTop: "clamp(28px, 3.6cqw, 52px)", maxWidth: 1312, marginInline: "auto" }}>
-          {item.type === "video" && item.videoFull?.embedUrl && embedSrc(item.videoFull.provider, item.videoFull.embedUrl, ctx.publication.settings.videoHosts) ? (
+          {item.videoFull?.embedUrl && embedSrc(item.videoFull.provider, item.videoFull.embedUrl, ctx.publication.settings.videoHosts) ? (
             <VideoPlayer src={embedSrc(item.videoFull.provider, item.videoFull.embedUrl, ctx.publication.settings.videoHosts)!} title={item.title}>
               <Media image={item.heroImage} ratio="16/9" sizes="(min-width: 1312px) 1184px, 100vw" priority>
                 <span className="play lg" />
@@ -105,7 +107,7 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
             </VideoPlayer>
           ) : (
             <Media image={item.heroImage} ratio="16/9" sizes="(min-width: 1312px) 1184px, 100vw" priority>
-              {item.type === "video" && <span className="play lg" />}
+              {item.video && <span className="play lg" />}
             </Media>
           )}
           {item.heroImage && (item.heroImage.caption || item.heroImage.credit) && !item.heroImage.storageKey.startsWith("placeholder:") && (
@@ -135,7 +137,7 @@ export default async function ContentPage({ params }: PageProps<"/[site]/[sectio
             <ShareBar url={url} title={item.title} />
           </aside>
           <div style={{ minWidth: 0 }}>
-            <RichText doc={item.body} insertAfterParagraph={{ n: 4, node: <div className="ad-inline"><AdSlot slot="in_content" ctx={ctx} /></div> }} />
+            <RichText doc={item.body} videoHosts={ctx.publication.settings.videoHosts} insertAfterParagraph={{ n: 4, node: <div className="ad-inline"><AdSlot slot="in_content" ctx={ctx} /></div> }} />
             {item.tags.length > 0 && (
               <ul aria-label="Tags" style={{ listStyle: "none", padding: 0, margin: "48px 0 0", display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {item.tags.map((t) => (

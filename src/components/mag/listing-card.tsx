@@ -21,8 +21,8 @@ export function ListingCard({ item, tz, priority, headingLevel = 3 }: { item: Co
         labelPrefix={isVideo ? "" : "IMG · "}
       >
         {isReview && <ScoreBlock score={item.review!.score} scoreMax={item.review!.scoreMax} />}
-        {isVideo && <span className="play" />}
-        {isVideo && item.video?.durationSeconds ? <span className="dur">{formatDuration(item.video.durationSeconds)}</span> : null}
+        {item.video && <span className="play" />}
+        {item.video?.durationSeconds ? <span className="dur">{formatDuration(item.video.durationSeconds)}</span> : null}
       </Media>
       {isReview && item.review?.badge ? (
         <span className="kicker" style={{ marginTop: 4 }}>

@@ -67,7 +67,7 @@ function B({ on, label, title, onClick, disabled }: { on?: boolean; label: strin
   );
 }
 
-function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
+function Toolbar({ editor, onImage, videoHosts }: { editor: Editor; onImage: () => void; videoHosts: string[] }) {
   const s = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -135,9 +135,9 @@ function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
         label="Embed"
         title="Embed video"
         onClick={() => {
-          const url = window.prompt("Video URL (YouTube or Vimeo)");
+          const url = window.prompt(videoHosts.length ? "Video link or embed code (YouTube, Vimeo, or an approved partner player)" : "Video URL (YouTube or Vimeo)");
           if (!url) return;
-          const e = toEmbed(url);
+          const e = toEmbed(url, videoHosts);
           if (!e) {
             alert("That link isn't from an approved video provider.");
             return;
@@ -165,7 +165,7 @@ function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
   );
 }
 
-export function RichEditor({ initial, onChange }: { initial: RichTextDoc | null; onChange: (doc: RichTextDoc) => void }) {
+export function RichEditor({ initial, onChange, videoHosts = [] }: { initial: RichTextDoc | null; onChange: (doc: RichTextDoc) => void; videoHosts?: string[] }) {
   const [picking, setPicking] = useState(false);
   const editor = useEditor({
     immediatelyRender: false,
@@ -191,7 +191,7 @@ export function RichEditor({ initial, onChange }: { initial: RichTextDoc | null;
 
   return (
     <div>
-      <Toolbar editor={editor} onImage={() => setPicking(true)} />
+      <Toolbar editor={editor} onImage={() => setPicking(true)} videoHosts={videoHosts} />
       <div className="tt-body">
         <EditorContent editor={editor} />
       </div>
