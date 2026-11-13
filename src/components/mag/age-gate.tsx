@@ -27,8 +27,9 @@ export function AgeGate({ name }: { name: string }) {
     setOpen(false);
   }
 
+  // data-nosnippet keeps this notice out of search result snippets.
   return (
-    <div className="agegate" role="dialog" aria-modal="true" aria-labelledby="agegate-title">
+    <div className="agegate" role="dialog" aria-modal="true" aria-labelledby="agegate-title" data-nosnippet="">
       <div className="agegate-panel">
         <Wordmark name={name} style={{ fontSize: "calc(34px * var(--dsz))" }} />
         <div style={{ height: 1, background: "var(--line)" }} />
