@@ -96,7 +96,11 @@ if (!origin.password) fail("HYPERDRIVE_DATABASE_URL has no password in it. Copy 
 const configs = await cf("GET", "/hyperdrive/configs");
 if (!configs.ok) fail(`Couldn't list Hyperdrive configs: ${why(configs)}. Does the token have "Hyperdrive: Edit"?`);
 let hd = configs.json.result?.find((c) => c.name === NAMES.hyperdrive);
-const r = hd ? await cf("PUT", `/hyperdrive/configs/${hd.id}`, { name: NAMES.hyperdrive, origin }) : await cf("POST", "/hyperdrive/configs", { name: NAMES.hyperdrive, origin });
+// Query caching off: public pages are already cached as whole pages (ISR), and
+// admin screens must see their own changes straight away (with caching on,
+// lists lagged a save by up to a minute).
+const hdBody = { name: NAMES.hyperdrive, origin, caching: { disabled: true } };
+const r = hd ? await cf("PUT", `/hyperdrive/configs/${hd.id}`, hdBody) : await cf("POST", "/hyperdrive/configs", hdBody);
 if (!r.ok) fail(`Couldn't ${hd ? "update" : "create"} Hyperdrive: ${why(r)}. Cloudflare tests the database connection here, so check the Supabase connection string and password.`);
 hd = r.json.result;
 console.log(`Hyperdrive ${NAMES.hyperdrive} ready`);
