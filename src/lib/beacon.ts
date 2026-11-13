@@ -4,10 +4,11 @@ import { getPublicationByHost, type Publication } from "@/data/publications";
 import { site, type Site } from "@/data/site";
 import { isBot } from "@/data/analytics";
 import { isoDay } from "./format";
+import { isStaffRequest } from "./staff-marker";
 
 /**
  * Shared checks for the counting endpoints: a known publication, a request
- * from its own pages (not another site), and not a bot.
+ * from its own pages (not another site), not a bot, and not from staff.
  */
 export async function beaconContext(req: Request): Promise<{ db: Db; s: Site; publication: Publication; host: string; day: string } | null> {
   const host = req.headers.get("host") ?? "";
@@ -22,6 +23,7 @@ export async function beaconContext(req: Request): Promise<{ db: Db; s: Site; pu
     }
   }
   if (isBot(req.headers.get("user-agent"))) return null;
+  if (isStaffRequest(req)) return null;
   const publication = await getPublicationByHost(host);
   if (!publication) return null;
   return { db: await getDb(), s: site(publication.id), publication, host, day: isoDay(new Date(), publication.settings.timeZone ?? "Europe/London") };

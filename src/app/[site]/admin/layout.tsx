@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminNav, type AdminNavItem } from "@/components/admin/admin-nav";
+import { StaffMarker } from "@/components/admin/staff-marker";
 import { Wordmark } from "@/components/mag/wordmark";
 import { requireAdminPage } from "@/lib/admin";
 import { can } from "@/lib/permissions";
@@ -49,6 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="adm">
+      <StaffMarker />
       <aside className="adm-side" aria-label="Admin">
         <Link href="/admin">
           <Wordmark name={a.ctx.publication.name} />

@@ -50,3 +50,14 @@ describe("noindex on workers.dev", () => {
     expect(await res.text()).toBe("hello");
   });
 });
+
+describe("staff visits aren't counted", () => {
+  it("spots the staff cookie among others, and only that exact value", async () => {
+    const { isStaffRequest } = await import("../src/lib/staff-marker");
+    const req = (cookie?: string) => new Request("https://asstomouth.net/api/t", cookie ? { headers: { cookie } } : {});
+    expect(isStaffRequest(req("a=1; pm_staff=1; pm_age_ok=1"))).toBe(true);
+    expect(isStaffRequest(req("pm_staff=1"))).toBe(true);
+    expect(isStaffRequest(req())).toBe(false);
+    expect(isStaffRequest(req("pm_staff=0; pm_staffx=1; xpm_staff=1"))).toBe(false);
+  });
+});

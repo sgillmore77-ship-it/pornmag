@@ -61,7 +61,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHead title="Analytics" sub="Counted on this site without cookies or tracking: one view per page per visit, bots excluded. Days follow the site's time zone." />
+      <PageHead title="Analytics" sub="Counted on this site without cookies or tracking: one view per page per visit. Bots aren't counted, and neither are you and your team: any device where admin has been opened is left out (from 13 Nov 2026). Days follow the site's time zone." />
       <div className="tabs">
         {RANGES.map((d) => (
           <Link key={d} href={`/admin/analytics?range=${d}`} aria-current={range === d ? "page" : undefined}>Last {d} days</Link>
