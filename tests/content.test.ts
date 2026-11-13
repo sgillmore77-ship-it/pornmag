@@ -77,3 +77,51 @@ describe("homepage", () => {
     expect(latest.items.map((i) => i.slug)).not.toContain("h-3");
   });
 });
+
+describe("homepage: video-first sections", () => {
+  const ago = (min: number) => new Date(Date.now() - min * 60_000);
+  const slugs = (sec: unknown) => (sec as { items: { slug: string }[] }).items.map((i) => i.slug);
+
+  it("Latest covers every story type, newest first", async () => {
+    const pub = await makePublication(db, "latest-all");
+    await makeContent(db, pub.id, { slug: "old-article", publishedAt: ago(30) });
+    await makeContent(db, pub.id, { slug: "new-video", type: "video", publishedAt: ago(1) });
+    await makeContent(db, pub.id, { slug: "mid-review", type: "review", publishedAt: ago(10) });
+    await db.insert(t.homepageSections).values({ publicationId: pub.id, kind: "latest", position: 0 });
+    const [latest] = await getHomepage(db, site(pub.id));
+    expect(slugs(latest)).toEqual(["new-video", "mid-review", "old-article"]);
+  });
+
+  it("Latest still honours a type filter set on the section", async () => {
+    const pub = await makePublication(db, "latest-filter");
+    await makeContent(db, pub.id, { slug: "f-article" });
+    await makeContent(db, pub.id, { slug: "f-video", type: "video" });
+    await db.insert(t.homepageSections).values({ publicationId: pub.id, kind: "latest", position: 0, config: { contentTypes: ["article"] } });
+    const [latest] = await getHomepage(db, site(pub.id));
+    expect(slugs(latest)).toEqual(["f-article"]);
+  });
+
+  it("Editor's picks: pinned first, then ticked stories; never unticked ones", async () => {
+    const pub = await makePublication(db, "picks");
+    const pinned = await makeContent(db, pub.id, { slug: "pinned", publishedAt: ago(50) });
+    await makeContent(db, pub.id, { slug: "ticked-new", isEditorsPick: true, publishedAt: ago(2) });
+    await makeContent(db, pub.id, { slug: "ticked-old", isEditorsPick: true, type: "video", publishedAt: ago(20) });
+    await makeContent(db, pub.id, { slug: "plain", publishedAt: ago(1) });
+    await makeContent(db, pub.id, { slug: "ticked-draft", isEditorsPick: true, status: "draft" });
+    const [sec] = await db.insert(t.homepageSections).values({ publicationId: pub.id, kind: "editors_picks", position: 0, config: { limit: 3 } }).returning();
+    await db.insert(t.homepageSectionItems).values({ sectionId: sec.id, contentId: pinned.id, position: 0 });
+    const [picks] = await getHomepage(db, site(pub.id));
+    expect(slugs(picks)).toEqual(["pinned", "ticked-new", "ticked-old"]);
+  });
+
+  it("Videos: pinned, then Featured videos, then the newest", async () => {
+    const pub = await makePublication(db, "videos-featured");
+    await makeContent(db, pub.id, { slug: "v-new", type: "video", publishedAt: ago(1) });
+    await makeContent(db, pub.id, { slug: "v-featured-old", type: "video", isFeatured: true, publishedAt: ago(60) });
+    await makeContent(db, pub.id, { slug: "v-mid", type: "video", publishedAt: ago(10) });
+    await makeContent(db, pub.id, { slug: "an-article", isFeatured: true });
+    await db.insert(t.homepageSections).values({ publicationId: pub.id, kind: "featured_videos", position: 0 });
+    const [videos] = await getHomepage(db, site(pub.id));
+    expect(slugs(videos)).toEqual(["v-featured-old", "v-new", "v-mid"]);
+  });
+});

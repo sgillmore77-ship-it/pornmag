@@ -117,6 +117,7 @@ export async function listContentAdmin(db: Db, s: Site, f: AdminListFilter = {})
       updatedAt: contentItems.updatedAt,
       category: categories.name,
       isFeatured: contentItems.isFeatured,
+      isEditorsPick: contentItems.isEditorsPick,
     })
     .from(contentItems)
     .leftJoin(categories, eq(categories.id, contentItems.categoryId))
@@ -258,6 +259,7 @@ export const contentInput = z.object({
   tagNames: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
   relatedIds: z.array(z.string().max(64)).max(12).default([]),
   isFeatured: z.boolean().default(false),
+  isEditorsPick: z.boolean().default(false),
   commentsEnabled: z.boolean().default(true),
   seoTitle: optionalText(120),
   metaDescription: optionalText(320),
@@ -376,6 +378,7 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
     ogImageId: input.ogImageId,
     categoryId: input.categoryId,
     isFeatured: input.isFeatured,
+    isEditorsPick: input.isEditorsPick,
     commentsEnabled: input.commentsEnabled,
     scheduledFor: input.status === "scheduled" ? input.scheduledFor : null,
     publishedAt,

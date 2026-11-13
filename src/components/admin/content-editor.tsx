@@ -74,6 +74,7 @@ export type EditorInitial = {
   tagNames: string[];
   related: Option[];
   isFeatured: boolean;
+  isEditorsPick: boolean;
   commentsEnabled: boolean;
   review: ReviewState;
   video: VideoState;
@@ -266,6 +267,7 @@ export function ContentEditor({
         tagNames: v.tagNames,
         relatedIds: v.related.map((r) => r.id),
         isFeatured: v.isFeatured,
+        isEditorsPick: v.isEditorsPick,
         commentsEnabled: v.commentsEnabled,
         seoTitle: v.seoTitle,
         metaDescription: v.metaDescription,
@@ -651,7 +653,11 @@ export function ContentEditor({
           <ImageField label="Hero image" value={v.heroImage} onChange={(m) => set("heroImage", m)} />
           <label className="check">
             <input type="checkbox" checked={v.isFeatured} onChange={(e) => set("isFeatured", e.target.checked)} />
-            Featured (eligible for the cover story)
+            Featured <span className="hint">can be the homepage cover story, and shows first in Videos</span>
+          </label>
+          <label className="check">
+            <input type="checkbox" checked={v.isEditorsPick} onChange={(e) => set("isEditorsPick", e.target.checked)} />
+            Editor&apos;s pick <span className="hint">shows in Editor&apos;s picks on the homepage</span>
           </label>
           <label className="check">
             <input type="checkbox" checked={v.commentsEnabled} onChange={(e) => set("commentsEnabled", e.target.checked)} />

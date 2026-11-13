@@ -447,6 +447,8 @@ export const contentItems = pgTable(
       onDelete: "set null",
     }),
     isFeatured: boolean("is_featured").notNull().default(false),
+    /** Shown in the homepage's Editor's picks section. */
+    isEditorsPick: boolean("is_editors_pick").notNull().default(false),
     commentsEnabled: boolean("comments_enabled").notNull().default(true),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     scheduledFor: timestamp("scheduled_for", { withTimezone: true }),

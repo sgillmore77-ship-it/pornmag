@@ -237,6 +237,9 @@ export type ListOptions = {
   categoryId?: string;
   tagId?: string;
   featuredOnly?: boolean;
+  editorsPickOnly?: boolean;
+  /** Featured stories first, then the rest, each newest first. */
+  featuredFirst?: boolean;
   excludeIds?: string[];
   limit?: number;
   offset?: number;
@@ -248,13 +251,14 @@ export async function listPublished(db: Db, s: Site, opts: ListOptions = {}): Pr
   if (opts.categoryId) where.push(eq(contentItems.categoryId, opts.categoryId));
   if (opts.tagId) where.push(sql`exists (select 1 from ${contentTags} ct where ct.content_id = ${contentItems.id} and ct.tag_id = ${opts.tagId})`);
   if (opts.featuredOnly) where.push(eq(contentItems.isFeatured, true));
+  if (opts.editorsPickOnly) where.push(eq(contentItems.isEditorsPick, true));
   if (opts.excludeIds?.length) where.push(notInArray(contentItems.id, opts.excludeIds));
 
   const rows = await db
     .select(cardColumns)
     .from(contentItems)
     .where(and(...where))
-    .orderBy(desc(contentItems.publishedAt), desc(contentItems.id))
+    .orderBy(...(opts.featuredFirst ? [desc(contentItems.isFeatured)] : []), desc(contentItems.publishedAt), desc(contentItems.id))
     .limit(Math.min(opts.limit ?? 12, 50))
     .offset(opts.offset ?? 0);
   return hydrateCards(db, s, rows);

@@ -67,7 +67,7 @@ export async function getHomepage(db: Db, s: Site): Promise<ResolvedSection[]> {
     let items = await getCardsByIds(db, s, pickedIds);
     const remaining = limit - items.length;
 
-    if (remaining > 0 && section.kind !== "editors_picks") {
+    if (remaining > 0) {
       const notThese = [...exclude, ...items.map((i) => i.id)];
       const types = section.config.contentTypes;
       const fill =
@@ -78,11 +78,14 @@ export async function getHomepage(db: Db, s: Site): Promise<ResolvedSection[]> {
             : section.kind === "featured_reviews"
               ? await listPublished(db, s, { types: ["review"], excludeIds: notThese, limit: remaining })
               : section.kind === "featured_videos"
-                ? await listPublished(db, s, { types: ["video"], excludeIds: notThese, limit: remaining })
+                ? await listPublished(db, s, { types: ["video"], featuredFirst: true, excludeIds: notThese, limit: remaining })
+                : section.kind === "editors_picks"
+                  ? await listPublished(db, s, { editorsPickOnly: true, excludeIds: notThese, limit: remaining })
                 : section.kind === "latest_news"
                   ? await listPublished(db, s, { types: ["news"], excludeIds: notThese, limit: remaining })
                   : await listPublished(db, s, {
-                      types: types ?? ["article"],
+                      // Video-first site: "Latest" covers every kind of story unless the section says otherwise.
+                      types,
                       categoryId: section.config.categoryId,
                       excludeIds: notThese,
                       limit: remaining,

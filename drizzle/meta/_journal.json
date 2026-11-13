@@ -50,6 +50,13 @@
       "when": 1794159312507,
       "tag": "0006_starter_pages",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794611508984,
+      "tag": "0007_editors_pick",
+      "breakpoints": true
     }
   ]
 }

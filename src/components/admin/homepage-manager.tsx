@@ -16,11 +16,11 @@ export type SectionState = {
 
 const LABEL: Record<string, { name: string; picks: "content" | "category" | null; help: string }> = {
   hero: { name: "Cover story", picks: "content", help: "Pick the cover story, or leave empty to use the newest featured story." },
-  latest: { name: "Latest stories", picks: null, help: "Newest features, automatically." },
+  latest: { name: "Latest stories", picks: null, help: "Newest stories of every kind (videos, reviews, articles), automatically. Skips anything already shown higher up the page." },
   featured_reviews: { name: "Reviews", picks: "content", help: "Pinned reviews first, then the newest." },
   trending: { name: "Trending", picks: null, help: "Most read in the last 7 days, automatically." },
-  featured_videos: { name: "Videos", picks: "content", help: "Pinned videos first, then the newest." },
-  editors_picks: { name: "Editor's picks", picks: "content", help: "Only shows what you pick here." },
+  featured_videos: { name: "Videos", picks: "content", help: "Pinned videos first, then videos ticked Featured, then the newest." },
+  editors_picks: { name: "Editor's picks", picks: "content", help: "Pinned stories first, then stories ticked Editor's pick in the editor (newest first)." },
   categories: { name: "Popular categories", picks: "category", help: "Pick categories, or leave empty to show all with content." },
   latest_news: { name: "News", picks: null, help: "Newest news items, automatically." },
   newsletter: { name: "Newsletter", picks: null, help: "Not available yet: needs an email provider. Leave hidden." },
