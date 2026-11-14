@@ -31,18 +31,55 @@ function imageSize(file: File): Promise<{ width: number; height: number } | null
   });
 }
 
-/** Uploads one image; returns the new media item. */
-export async function uploadImage(file: File, alt = ""): Promise<{ ok: true; media: PickedMedia } | { ok: false; error: string }> {
-  const size = await imageSize(file);
-  const form = new FormData();
-  form.set("file", file);
-  form.set("alt", alt);
-  if (size) {
-    form.set("width", String(size.width));
-    form.set("height", String(size.height));
+/** Longest side kept for uploaded photos: sharp on large screens, small to serve. */
+const MAX_IMAGE_SIDE = 2400;
+const MAX_UPLOAD_MB = 15;
+
+/**
+ * Shrinks large JPEG, WebP and AVIF photos to MAX_IMAGE_SIDE (as JPEG, 85%)
+ * before upload. PNG and GIF are left alone (transparency, animation).
+ * Falls back to the original file if anything goes wrong.
+ */
+async function shrinkPhoto(file: File, size: { width: number; height: number } | null) {
+  const photo = /^image\/(jpeg|webp|avif)$/.test(file.type);
+  if (!photo || !size) return { file, size };
+  const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(size.width, size.height));
+  if (scale === 1 && file.size <= 2 * 1024 * 1024) return { file, size };
+  try {
+    const bitmap = await createImageBitmap(file);
+    const width = Math.round(size.width * scale);
+    const height = Math.round(size.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.85));
+    if (!blob || blob.size >= file.size) return { file, size };
+    const name = file.name.replace(/\.[a-z0-9]+$/i, "") + ".jpg";
+    return { file: new File([blob], name, { type: "image/jpeg" }), size: { width, height } };
+  } catch {
+    return { file, size };
   }
-  const r = await uploadMediaAction(form);
-  return r.ok ? { ok: true, media: r.data! } : { ok: false, error: r.error };
+}
+
+/** Uploads one image; returns the new media item. Never throws. */
+export async function uploadImage(original: File, alt = ""): Promise<{ ok: true; media: PickedMedia } | { ok: false; error: string }> {
+  try {
+    const { file, size } = await shrinkPhoto(original, await imageSize(original));
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) return { ok: false, error: `Images must be ${MAX_UPLOAD_MB} MB or smaller` };
+    const form = new FormData();
+    form.set("file", file);
+    form.set("alt", alt);
+    if (size) {
+      form.set("width", String(size.width));
+      form.set("height", String(size.height));
+    }
+    const r = await uploadMediaAction(form);
+    return r.ok ? { ok: true, media: r.data! } : { ok: false, error: r.error };
+  } catch {
+    return { ok: false, error: "The upload didn't go through. Check your connection and try again." };
+  }
 }
 
 export function UploadButton({ onUploaded, label = "Upload image" }: { onUploaded: (m: PickedMedia) => void; label?: string }) {

@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
     loaderFile: "./src/lib/image-loader.ts",
   },
   poweredByHeader: false,
+  experimental: {
+    // Image uploads go through a server action; the default 1 MB cap made
+    // ordinary photos fail. Matches MAX_UPLOAD_BYTES (15 MB) plus form overhead.
+    serverActions: { bodySizeLimit: "16mb" },
+  },
   // Same as public/_headers, for `next start` and local dev.
   async headers() {
     return [{ source: "/fonts/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] }];
