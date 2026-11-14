@@ -125,3 +125,30 @@ describe("homepage: video-first sections", () => {
     expect(slugs(videos)).toEqual(["v-featured-old", "v-new", "v-mid"]);
   });
 });
+
+describe("stories in more than one category", () => {
+  it("shows a story on its main category page and on each extra one, and counts it in each", async () => {
+    const pub = await makePublication(db, "multi-cat");
+    const s = site(pub.id);
+    const [redhead, dap, other] = await db
+      .insert(t.categories)
+      .values([
+        { publicationId: pub.id, name: "Redhead ATM", slug: "redhead-atm" },
+        { publicationId: pub.id, name: "Double Anal ATM", slug: "double-anal-atm" },
+        { publicationId: pub.id, name: "Other", slug: "other" },
+      ])
+      .returning();
+    const story = await makeContent(db, pub.id, { slug: "redhead-dap", type: "video", categoryId: redhead.id });
+    await db.insert(t.contentCategories).values({ contentId: story.id, categoryId: dap.id });
+
+    expect((await listPublished(db, s, { categoryId: redhead.id })).map((c) => c.slug)).toEqual(["redhead-dap"]);
+    expect((await listPublished(db, s, { categoryId: dap.id })).map((c) => c.slug)).toEqual(["redhead-dap"]);
+    expect(await listPublished(db, s, { categoryId: other.id })).toEqual([]);
+
+    const { listCategories } = await import("@/data/content");
+    const counts = Object.fromEntries((await listCategories(db, s)).map((c) => [c.slug, c.count]));
+    expect(counts).toMatchObject({ "redhead-atm": 1, "double-anal-atm": 1, other: 0 });
+    // The card still names the main category.
+    expect((await listPublished(db, s, { categoryId: dap.id }))[0].category?.slug).toBe("redhead-atm");
+  });
+});

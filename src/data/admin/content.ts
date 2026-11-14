@@ -7,6 +7,7 @@ import {
   contentAuthors,
   contentEntities,
   contentItems,
+  contentCategories,
   contentTags,
   entities,
   media,
@@ -174,7 +175,7 @@ export async function getContentForEdit(db: Db, s: Site, id: string) {
     .where(and(eq(contentItems.publicationId, s.publicationId), eq(contentItems.id, id)))
     .limit(1);
   if (!item) return null;
-  const [authorRows, tagRows, relatedRows, [review], [video]] = await Promise.all([
+  const [authorRows, tagRows, relatedRows, [review], [video], extraCatRows] = await Promise.all([
     db.select({ id: contentAuthors.authorId }).from(contentAuthors).where(eq(contentAuthors.contentId, id)).orderBy(asc(contentAuthors.position)),
     db.select({ name: tags.name }).from(contentTags).innerJoin(tags, eq(tags.id, contentTags.tagId)).where(eq(contentTags.contentId, id)).orderBy(asc(tags.name)),
     db
@@ -185,9 +186,11 @@ export async function getContentForEdit(db: Db, s: Site, id: string) {
       .orderBy(asc(relatedContent.position)),
     db.select().from(reviewDetails).where(eq(reviewDetails.contentId, id)),
     db.select().from(videoDetails).where(eq(videoDetails.contentId, id)),
+    db.select({ id: contentCategories.categoryId }).from(contentCategories).where(eq(contentCategories.contentId, id)),
   ]);
   return {
     ...item,
+    extraCategoryIds: extraCatRows.map((c) => c.id),
     authorIds: authorRows.map((a) => a.id),
     tagNames: tagRows.map((t) => t.name),
     related: relatedRows,
@@ -253,6 +256,8 @@ export const contentInput = z.object({
     .transform((v) => (v ? new Date(v) : null))
     .refine((d) => d === null || !Number.isNaN(d.getTime()), "is not a valid date"),
   categoryId: optionalId,
+  /** Extra categories the story also appears in (besides categoryId). */
+  extraCategoryIds: z.array(z.string().max(64)).max(20).default([]),
   heroImageId: optionalId,
   ogImageId: optionalId,
   authorIds: z.array(z.string().max(64)).max(10).default([]),
@@ -344,7 +349,7 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
 
   await Promise.all([
     assertOwned(db, s, entities, [input.review?.subjectEntityId, input.video?.studioEntityId], "studio or creator"),
-    assertOwned(db, s, categories, [input.categoryId], "category"),
+    assertOwned(db, s, categories, [input.categoryId, ...input.extraCategoryIds], "category"),
     assertOwned(db, s, media, [input.heroImageId, input.ogImageId], "image"),
     assertOwned(db, s, authors, input.authorIds, "author"),
     assertOwned(db, s, contentItems, input.relatedIds, "related item"),
@@ -408,6 +413,9 @@ export async function saveContent(db: Db, s: Site, actor: Actor, raw: ContentInp
       await tx.insert(contentAuthors).values([...new Set(input.authorIds)].map((authorId, position) => ({ contentId: id!, authorId, position })));
     }
 
+    await tx.delete(contentCategories).where(eq(contentCategories.contentId, id!));
+    const extraCats = [...new Set(input.extraCategoryIds)].filter((c) => c !== input.categoryId);
+    if (extraCats.length) await tx.insert(contentCategories).values(extraCats.map((categoryId) => ({ contentId: id!, categoryId })));
     await tx.delete(contentTags).where(eq(contentTags.contentId, id!));
     const tagNames = [...new Map(input.tagNames.map((n) => [slugify(n), n])).entries()].filter(([slug]) => slug);
     if (tagNames.length) {

@@ -68,6 +68,7 @@ export type EditorInitial = {
   scheduledFor: string | null; // ISO
   publishedAt: string | null; // ISO
   categoryId: string;
+  extraCategoryIds: string[];
   heroImage: PickedMedia | null;
   ogImage: PickedMedia | null;
   authorIds: string[];
@@ -261,6 +262,7 @@ export function ContentEditor({
         status,
         scheduledFor: status === "scheduled" && scheduled ? new Date(scheduled).toISOString() : undefined,
         categoryId: v.categoryId,
+        extraCategoryIds: v.extraCategoryIds.filter((id) => id !== v.categoryId),
         heroImageId: v.heroImage?.id,
         ogImageId: v.ogImage?.id,
         authorIds: v.authorIds,
@@ -620,7 +622,9 @@ export function ContentEditor({
             </select>
           </label>
           <label className="f">
-            <span>Category</span>
+            <span>
+              Main category <span className="hint">sets the story&apos;s web address</span>
+            </span>
             <select value={v.categoryId} onChange={(e) => set("categoryId", e.target.value)}>
               <option value="">None</option>
               {categories.map((c) => (
@@ -630,6 +634,27 @@ export function ContentEditor({
               ))}
             </select>
           </label>
+          <fieldset className="f" style={{ border: 0, padding: 0, margin: 0 }}>
+            <legend style={{ marginBottom: 6 }}>
+              Also show in <span className="hint">as many as fit</span>
+            </legend>
+            <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid var(--line)", padding: "4px 10px" }}>
+              {categories
+                .filter((c) => c.id !== v.categoryId)
+                .map((c) => (
+                  <label key={c.id} className="check" style={{ padding: "4px 0" }}>
+                    <input
+                      type="checkbox"
+                      checked={v.extraCategoryIds.includes(c.id)}
+                      onChange={(e) =>
+                        set("extraCategoryIds", e.target.checked ? [...v.extraCategoryIds, c.id] : v.extraCategoryIds.filter((x) => x !== c.id))
+                      }
+                    />
+                    {c.name}
+                  </label>
+                ))}
+            </div>
+          </fieldset>
           <fieldset className="f" style={{ border: 0, padding: 0, margin: 0 }}>
             <legend style={{ marginBottom: 6 }}>Byline</legend>
             <div style={{ maxHeight: 160, overflowY: "auto", border: "1px solid var(--line)", padding: "4px 10px" }}>

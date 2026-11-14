@@ -123,7 +123,7 @@ describe("contact form", () => {
 describe("starter data migrations", () => {
   it("add the domain and the six starter pages to 'main', and are safe to re-run", async () => {
     const main = await makePublication(db, "main");
-    for (const file of ["drizzle/0004_custom_domain.sql", "drizzle/0006_starter_pages.sql"]) {
+    for (const file of ["drizzle/0004_custom_domain.sql", "drizzle/0006_starter_pages.sql", "drizzle/0009_atm_menu.sql"]) {
       const text = readFileSync(file, "utf8");
       await db.execute(sql.raw(text));
       await db.execute(sql.raw(text));
@@ -134,5 +134,12 @@ describe("starter data migrations", () => {
     expect((await getPublishedPage(db, site(main.id), "advertise"))?.contactTopic).toBe("advertising");
     const domains = await db.select().from(t.publicationDomains).where(sql`${t.publicationDomains.publicationId} = ${main.id}`);
     expect(domains.map((d) => [d.hostname, d.isPrimary]).sort()).toEqual([["asstomouth.net", true], ["www.asstomouth.net", false]]);
+    const cats = await db.select({ slug: t.categories.slug }).from(t.categories).where(sql`${t.categories.publicationId} = ${main.id}`);
+    expect(cats.map((c) => c.slug).sort()).toEqual(["asian-atm", "blonde-atm", "brunette-atm", "double-anal-atm", "ebony-atm", "redhead-atm", "triple-anal-atm"]);
+    const [pub] = await db.select().from(t.publications).where(sql`${t.publications.id} = ${main.id}`);
+    expect(pub.settings.nav?.map((n) => n.label)).toEqual([
+      "Latest videos", "ATM Anal", "Double Anal ATM", "Triple Anal ATM", "Amateur ATM", "ATM Threesomes",
+      "Brunette ATM", "Blonde ATM", "Redhead ATM", "Ebony ATM", "Asian ATM",
+    ]);
   });
 });

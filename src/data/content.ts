@@ -248,7 +248,11 @@ export type ListOptions = {
 export async function listPublished(db: Db, s: Site, opts: ListOptions = {}): Promise<ContentCard[]> {
   const where = [isLive(s)];
   if (opts.types?.length) where.push(inArray(contentItems.type, opts.types));
-  if (opts.categoryId) where.push(eq(contentItems.categoryId, opts.categoryId));
+  // Main category, or listed there as an extra one.
+  if (opts.categoryId)
+    where.push(
+      sql`(${contentItems.categoryId} = ${opts.categoryId} or exists (select 1 from content_categories cc where cc.content_id = ${contentItems.id} and cc.category_id = ${opts.categoryId}))`,
+    );
   if (opts.tagId) where.push(sql`exists (select 1 from ${contentTags} ct where ct.content_id = ${contentItems.id} and ct.tag_id = ${opts.tagId})`);
   if (opts.featuredOnly) where.push(eq(contentItems.isFeatured, true));
   if (opts.editorsPickOnly) where.push(eq(contentItems.isEditorsPick, true));
@@ -427,7 +431,8 @@ export async function listRelated(db: Db, s: Site, contentId: string, limit = 4)
 export async function listCategories(db: Db, s: Site) {
   const count = sql<number>`(
     select count(*)::int from content_items ci
-    where ci.category_id = "categories"."id"
+    where (ci.category_id = "categories"."id"
+        or exists (select 1 from content_categories cc where cc.content_id = ci.id and cc.category_id = "categories"."id"))
       and ci.status = 'published'
       and ci.published_at <= now()
   )`;

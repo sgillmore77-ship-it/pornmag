@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
 import * as t from "@/db/schema";
-import { canEditItem, publishDue, saveContent, type ContentInput } from "@/data/admin/content";
+import { canEditItem, getContentForEdit, publishDue, saveContent, type ContentInput } from "@/data/admin/content";
 import { sniffImageType, storageKeyFor } from "@/data/admin/media";
 import { findRedirect, normalisePath, saveHomepage, saveRedirect, saveSettings } from "@/data/admin/site";
 import { authorForUser, deleteAuthor, saveCategory, saveTag } from "@/data/admin/taxonomy";
@@ -219,5 +219,32 @@ describe("uploads", () => {
     const key = storageKeyFor(site(pub.id), "image/png", new Date("2026-11-05T00:00:00Z"));
     expect(key).toMatch(new RegExp(`^${pub.id}/2026/11/[a-f0-9-]+\\.png$`));
     expect(() => storageKeyFor(site(pub.id), "image/svg+xml")).toThrow();
+  });
+});
+
+describe("extra categories in the editor", () => {
+  it("saves extra categories, drops the main one from the list, refuses others' and clears them", async () => {
+    const s = site(pub.id);
+    const [main, extra1, extra2] = await db
+      .insert(t.categories)
+      .values([
+        { publicationId: pub.id, name: "Main X", slug: `main-x-${Date.now()}` },
+        { publicationId: pub.id, name: "Extra 1", slug: `extra-1-${Date.now()}` },
+        { publicationId: pub.id, name: "Extra 2", slug: `extra-2-${Date.now()}` },
+      ])
+      .returning();
+    const [foreign] = await db.insert(t.categories).values({ publicationId: other.id, name: "Theirs", slug: `theirs-${Date.now()}` }).returning();
+    const adminActor = actor("editor", "editor");
+    const base = (over: Partial<ContentInput>) => ({ type: "article" as const, title: "Multi", body, status: "draft" as const, categoryId: main.id, ...over });
+
+    const saved = await saveContent(db, s, adminActor, base({ extraCategoryIds: [extra1.id, extra2.id, main.id, extra1.id] }));
+    let edit = await getContentForEdit(db, s, saved.id);
+    expect(edit?.extraCategoryIds.sort()).toEqual([extra1.id, extra2.id].sort());
+
+    await expect(saveContent(db, s, adminActor, base({ id: saved.id, extraCategoryIds: [foreign.id] }))).rejects.toThrow(/category/i);
+
+    await saveContent(db, s, adminActor, base({ id: saved.id, extraCategoryIds: [] }));
+    edit = await getContentForEdit(db, s, saved.id);
+    expect(edit?.extraCategoryIds).toEqual([]);
   });
 });

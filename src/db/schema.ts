@@ -496,6 +496,26 @@ export const contentAuthors = pgTable(
   (t) => [primaryKey({ columns: [t.contentId, t.authorId] })],
 );
 
+/**
+ * Extra categories a story also appears in, besides its main one
+ * (contentItems.categoryId, which sets its URL and breadcrumb).
+ */
+export const contentCategories = pgTable(
+  "content_categories",
+  {
+    contentId: text("content_id")
+      .notNull()
+      .references(() => contentItems.id, { onDelete: "cascade" }),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.contentId, t.categoryId] }),
+    index("content_categories_cat_idx").on(t.categoryId),
+  ],
+);
+
 export const contentTags = pgTable(
   "content_tags",
   {

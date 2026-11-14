@@ -23,7 +23,8 @@ const seo = {
 // ---------------------------------------------------------------------------
 
 export async function listCategoriesAdmin(db: Db, s: Site) {
-  const used = sql<number>`(select count(*)::int from ${contentItems} where ${contentItems.categoryId} = "categories"."id")`;
+  const used = sql<number>`(select count(*)::int from ${contentItems} where ${contentItems.categoryId} = "categories"."id"
+    or exists (select 1 from content_categories cc where cc.content_id = ${contentItems.id} and cc.category_id = "categories"."id"))`;
   return db
     .select({
       id: categories.id,
