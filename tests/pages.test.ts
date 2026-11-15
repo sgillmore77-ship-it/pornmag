@@ -123,7 +123,7 @@ describe("contact form", () => {
 describe("starter data migrations", () => {
   it("add the domain and the six starter pages to 'main', and are safe to re-run", async () => {
     const main = await makePublication(db, "main");
-    for (const file of ["drizzle/0004_custom_domain.sql", "drizzle/0006_starter_pages.sql", "drizzle/0009_atm_menu.sql"]) {
+    for (const file of ["drizzle/0004_custom_domain.sql", "drizzle/0006_starter_pages.sql", "drizzle/0009_atm_menu.sql", "drizzle/0010_atm_pages.sql"]) {
       const text = readFileSync(file, "utf8");
       await db.execute(sql.raw(text));
       await db.execute(sql.raw(text));
@@ -132,6 +132,8 @@ describe("starter data migrations", () => {
     expect(pages.map((p) => p.slug)).toEqual(["about", "advertise", "contact", "terms", "privacy", "legal"]);
     expect((await getPublishedPage(db, site(main.id), "contact"))?.contactTopic).toBe("general");
     expect((await getPublishedPage(db, site(main.id), "advertise"))?.contactTopic).toBe("advertising");
+    expect((await getPublishedPage(db, site(main.id), "advertise"))?.standfirst).toMatch(/ATM/);
+    expect((await getPublishedPage(db, site(main.id), "about"))?.seoTitle).toBe("About Ass to Mouth – The Home of ATM Porn");
     const domains = await db.select().from(t.publicationDomains).where(sql`${t.publicationDomains.publicationId} = ${main.id}`);
     expect(domains.map((d) => [d.hostname, d.isPrimary]).sort()).toEqual([["asstomouth.net", true], ["www.asstomouth.net", false]]);
     const cats = await db.select({ slug: t.categories.slug }).from(t.categories).where(sql`${t.categories.publicationId} = ${main.id}`);
