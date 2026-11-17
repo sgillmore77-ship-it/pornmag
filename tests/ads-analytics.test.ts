@@ -4,7 +4,7 @@ import type { Db } from "@/db/client";
 import * as t from "@/db/schema";
 import { activeAds, recordClick, recordImpressions } from "@/data/ads";
 import { analyticsReport, classifySource, contentIdForPath, isBot, recordView } from "@/data/analytics";
-import { saveAd, saveAdsSettings } from "@/data/admin/ads";
+import { adInput, saveAd, saveAdsSettings } from "@/data/admin/ads";
 import { site, type Site } from "@/data/site";
 import { isoDay, shiftDay } from "@/lib/format";
 import { makeContent, makePublication, setupTestDb } from "./helpers/db";
@@ -109,8 +109,9 @@ describe("ads", () => {
   it("validates placements", async () => {
     const base = { slot: "in_content" as const, name: "Test", enabled: true, devices: ["mobile" as const, "desktop" as const] };
     await expect(saveAd(db, s, { ...base, kind: "code", code: "  " })).rejects.toThrow(/ad code/);
-    await expect(saveAd(db, s, { ...base, kind: "image", imageId, clickUrl: "http://insecure.example" })).rejects.toThrow(/https/);
-    await expect(saveAd(db, s, { ...base, kind: "image", imageId, clickUrl: "javascript:alert(1)" })).rejects.toThrow(/https/);
+    // Plain http links are upgraded rather than refused; other schemes are refused.
+    expect(adInput.parse({ ...base, kind: "image", imageId, clickUrl: "http://insecure.example" }).clickUrl).toBe("https://insecure.example");
+    await expect(saveAd(db, s, { ...base, kind: "image", imageId, clickUrl: "javascript:alert(1)" })).rejects.toThrow(/web address/);
     await expect(saveAd(db, s, { ...base, kind: "image", clickUrl: "https://ok.example" })).rejects.toThrow(/banner image/);
     await expect(saveAd(db, s, { ...base, kind: "code", code: "<b>x</b>", devices: [] })).rejects.toThrow(/device/);
     await expect(saveAd(db, s, { ...base, kind: "code", code: "<b>x</b>", startsAt: "2026-12-02T00:00:00Z", endsAt: "2026-12-01T00:00:00Z" })).rejects.toThrow(/after the start/);

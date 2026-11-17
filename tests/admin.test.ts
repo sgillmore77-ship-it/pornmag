@@ -248,3 +248,28 @@ describe("extra categories in the editor", () => {
     expect(edit?.extraCategoryIds).toEqual([]);
   });
 });
+
+describe("ad links", () => {
+  it("accepts links the way people type them", async () => {
+    const { normaliseLink } = await import("@/data/admin/ads");
+    expect(normaliseLink("adultseo.com")).toBe("https://adultseo.com");
+    expect(normaliseLink(" www.adultseo.com/audit ")).toBe("https://www.adultseo.com/audit");
+    expect(normaliseLink("http://adultseo.com/")).toBe("https://adultseo.com/");
+    expect(normaliseLink("HTTPS://adultseo.com")).toBe("HTTPS://adultseo.com");
+    expect(normaliseLink("adultseo.com:8443/x")).toBe("https://adultseo.com:8443/x");
+    expect(normaliseLink("")).toBeNull();
+    expect(normaliseLink("javascript:alert(1)")).toBe("javascript:alert(1)");
+  });
+
+  it("saves a banner whose link was typed without https, and refuses non-web links", async () => {
+    const { saveAd } = await import("@/data/admin/ads");
+    const s = site(pub.id);
+    const [img] = await db.insert(t.media).values({ publicationId: pub.id, storageKey: `${pub.id}/ad.png`, mimeType: "image/png" }).returning();
+    const base = { slot: "footer" as const, name: "Footer", kind: "image" as const, imageId: img.id, enabled: true, devices: ["desktop" as const], altText: "Ad" };
+    const r = await saveAd(db, s, { ...base, clickUrl: "adultseo.com" });
+    const [row] = await db.select().from(t.adPlacements).where(eq(t.adPlacements.id, r.id));
+    expect(row.clickUrl).toBe("https://adultseo.com");
+    await expect(saveAd(db, s, { ...base, clickUrl: "javascript:alert(1)" })).rejects.toThrow(/web address/);
+    await expect(saveAd(db, s, { ...base, clickUrl: "nodot" })).rejects.toThrow(/web address/);
+  });
+});

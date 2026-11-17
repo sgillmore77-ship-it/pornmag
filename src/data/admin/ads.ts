@@ -42,6 +42,20 @@ const optionalDate = z
   .transform((v) => (v ? new Date(v) : null))
   .refine((d) => d === null || !Number.isNaN(d.getTime()), "is not a valid date");
 
+/**
+ * Accepts links the way people type them: "adultseo.com", "www.x.com/page" or
+ * "http://…" all become https://. Anything with another scheme is kept as is
+ * (and then refused).
+ */
+export function normaliseLink(v: string | null | undefined): string | null {
+  const t = (v ?? "").trim();
+  if (!t) return null;
+  if (/^https:\/\//i.test(t)) return t;
+  if (/^http:\/\//i.test(t)) return "https://" + t.slice(7);
+  if (/^[a-z][a-z0-9+.-]*:/i.test(t) && !/^[^:/]+:\d/.test(t)) return t;
+  return "https://" + t.replace(/^\/+/, "");
+}
+
 export const adInput = z
   .object({
     id: z.string().max(64).optional(),
@@ -55,8 +69,8 @@ export const adInput = z
       .trim()
       .max(2000)
       .nullish()
-      .transform((v) => v || null)
-      .refine((v) => !v || /^https:\/\/[^\s]+$/.test(v), "must start with https://"),
+      .transform((v) => normaliseLink(v))
+      .refine((v) => !v || /^https:\/\/[^\s/]+\.[^\s]+$/.test(v), "should be a web address, like adultseo.com"),
     altText: z.string().trim().max(200).nullish().transform((v) => v || null),
     advertiser: z.string().trim().max(120).nullish().transform((v) => v || null),
     enabled: z.boolean(),

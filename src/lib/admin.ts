@@ -79,6 +79,13 @@ export async function purge(a: AdminContext) {
 
 export type ActionResult<T = void> = { ok: true; data?: T; message?: string } | { ok: false; error: string };
 
+/** Plain names for form fields in error messages ("clickUrl" means nothing to an editor). */
+const FIELD_LABELS: Record<string, string> = {
+  clickUrl: "Link", imageId: "Banner", altText: "Alt text", code: "Ad code", endsAt: "Ends", startsAt: "Starts",
+  name: "Name", devices: "Devices", title: "Title", slug: "Web address", standfirst: "Intro", href: "Link address",
+  label: "Link label", email: "Email", primaryColor: "Brand colour", videoHosts: "Video players", homeBannerHref: "Banner link",
+};
+
 /** Wraps an action body so permission and validation errors come back as messages. */
 export async function run<T>(fn: () => Promise<T>, message?: string): Promise<ActionResult<T>> {
   try {
@@ -87,7 +94,9 @@ export async function run<T>(fn: () => Promise<T>, message?: string): Promise<Ac
     const err = e as Error & { issues?: { message: string; path: (string | number)[] }[] };
     if (err.issues?.length) {
       const i = err.issues[0];
-      return { ok: false, error: `${i.path.join(".") || "Input"}: ${i.message}` };
+      const field = FIELD_LABELS[String(i.path[0])] ?? String(i.path[0] ?? "");
+      const msg = i.message.charAt(0).toUpperCase() + i.message.slice(1);
+      return { ok: false, error: field ? `${field}: ${i.message}` : msg };
     }
     if (err.name === "ForbiddenError") return { ok: false, error: "You don't have permission to do that." };
     if (/duplicate key/.test(String((err as { cause?: unknown }).cause ?? err.message))) {

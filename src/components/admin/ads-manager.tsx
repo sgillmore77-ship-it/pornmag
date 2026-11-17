@@ -138,6 +138,7 @@ export function AdsManager({ rows, settings }: { rows: AdRow[]; settings: { prev
             <div className="toolbar">
               <button className="btn btn-primary" disabled={pending} onClick={save}>{pending ? "Saving…" : "Save placement"}</button>
               <button className="btn btn-outline" disabled={pending} onClick={() => setEditing(null)}>Cancel</button>
+              {notice && !notice.ok && <p className="notice notice-err" role="alert" style={{ flexBasis: "100%", margin: 0 }}>{notice.text}</p>}
             </div>
           </div>
           <MediaPicker open={picker} onClose={() => setPicker(false)} onPick={(m: PickedMedia) => { set("image", { id: m.id, storageKey: m.storageKey }); setPicker(false); }} />
