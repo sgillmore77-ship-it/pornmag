@@ -13,6 +13,12 @@ export const SOURCES = ["direct", "internal", "search", "social", "referral"] as
 export type Source = (typeof SOURCES)[number];
 
 const SEARCH = /(^|\.)(google|bing|duckduckgo|yahoo|yandex|baidu|ecosia|qwant|startpage|brave)\./i;
+/**
+ * Tools that share a search engine's domain but aren't search: Search Console
+ * (search.google.com), webmail, docs and so on. Links from these are referrals,
+ * so the owner checking their site from Search Console isn't counted as search.
+ */
+const NOT_SEARCH = /^(search\.google\.|mail\.|accounts\.|myaccount\.|docs\.|drive\.|sites\.|groups\.|translate\.|support\.|ads\.|analytics\.|calendar\.|photos\.|chat\.|meet\.|keep\.|webmaster\.|bing\.com\/webmasters)/i;
 const SOCIAL = /(^|\.)(t\.co|x\.com|twitter\.com|reddit\.com|facebook\.com|fb\.com|instagram\.com|bsky\.app|threads\.net|tiktok\.com|t\.me|telegram\.org|discord\.com|whatsapp\.com|linkedin\.com|lnkd\.in|youtube\.com|tumblr\.com)$/i;
 
 /** Where a view came from, from the referrer's host only. */
@@ -26,7 +32,7 @@ export function classifySource(referrer: string | null | undefined, ownHost: str
     return "direct";
   }
   if (host === ownHost.split(":")[0].toLowerCase()) return "internal";
-  if (SEARCH.test(host)) return "search";
+  if (SEARCH.test(host) && !NOT_SEARCH.test(host)) return "search";
   if (SOCIAL.test(host)) return "social";
   return "referral";
 }

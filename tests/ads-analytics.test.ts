@@ -30,6 +30,13 @@ describe("traffic sources and bots", () => {
   it("classifies referrers by host only", () => {
     expect(classifySource(null, "mag.example", false)).toBe("direct");
     expect(classifySource("https://www.google.co.uk/", "mag.example", false)).toBe("search");
+    expect(classifySource("https://www.bing.com/search?q=x", "mag.example", false)).toBe("search");
+    expect(classifySource("android-app://com.google.android.googlequicksearchbox/", "mag.example", false)).toBe("search");
+    // Search Console, webmail and other tools on a search engine's domain aren't search.
+    expect(classifySource("https://search.google.com/search-console/performance", "mag.example", false)).toBe("referral");
+    expect(classifySource("https://mail.google.com/mail/u/0/", "mag.example", false)).toBe("referral");
+    expect(classifySource("https://docs.google.com/document/d/x", "mag.example", false)).toBe("referral");
+    expect(classifySource("https://mail.yahoo.com/", "mag.example", false)).toBe("referral");
     expect(classifySource("https://duckduckgo.com/", "mag.example", false)).toBe("search");
     expect(classifySource("https://old.reddit.com/r/x", "mag.example", false)).toBe("social");
     expect(classifySource("https://t.co/abc", "mag.example", false)).toBe("social");
