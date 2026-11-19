@@ -17,6 +17,11 @@ export function bylineOf(item: ContentCard): string {
   return item.authors.map((a) => a.name).join(" & ");
 }
 
+/** "By Name", or null when the story doesn't show its author. */
+export function byOf(item: ContentCard, prefix = "By"): string | null {
+  return item.authors.length ? `${prefix} ${bylineOf(item)}` : null;
+}
+
 export function KickerDate({ item, tz, sep = false }: { item: ContentCard; tz?: string; sep?: boolean }) {
   if (sep) {
     return (

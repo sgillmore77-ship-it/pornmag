@@ -175,7 +175,9 @@ export async function hydrateCards(db: Db, s: Site, rows: CardRow[]): Promise<Co
       .select({ contentId: contentAuthors.contentId, name: authors.name, slug: authors.slug })
       .from(contentAuthors)
       .innerJoin(authors, eq(authors.id, contentAuthors.authorId))
-      .where(and(inArray(contentAuthors.contentId, ids), eq(authors.publicationId, s.publicationId)))
+      .innerJoin(contentItems, eq(contentItems.id, contentAuthors.contentId))
+      // Author names are only shown to readers when the story says so.
+      .where(and(inArray(contentAuthors.contentId, ids), eq(authors.publicationId, s.publicationId), eq(contentItems.showByline, true)))
       .orderBy(contentAuthors.position),
     db
       .select({
@@ -333,7 +335,8 @@ export async function getPublishedBySlug(
       .select({ name: authors.name, slug: authors.slug, role: authors.role })
       .from(contentAuthors)
       .innerJoin(authors, eq(authors.id, contentAuthors.authorId))
-      .where(and(eq(contentAuthors.contentId, row.id), eq(authors.publicationId, s.publicationId)))
+      .innerJoin(contentItems, eq(contentItems.id, contentAuthors.contentId))
+      .where(and(eq(contentAuthors.contentId, row.id), eq(authors.publicationId, s.publicationId), eq(contentItems.showByline, true)))
       .orderBy(contentAuthors.position),
     loadMedia(db, s, [row.ogImageId]),
     db

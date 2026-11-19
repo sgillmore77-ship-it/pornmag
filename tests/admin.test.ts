@@ -296,3 +296,19 @@ describe("bulk actions", () => {
     expect(await statusOf(theirs.id)).toBe("published");
   });
 });
+
+describe("byline switch", () => {
+  it("hides author names from readers unless the story turns them on", async () => {
+    const s = site(pub.id);
+    const authorId = await authorForUser(db, s, { id: users.editor, name: "Ed Itor" });
+    const ed = actor("editor", "editor");
+    await saveContent(db, s, ed, base({ title: "No byline", slug: "no-byline", status: "published", authorIds: [authorId] }));
+    await saveContent(db, s, ed, base({ title: "With byline", slug: "with-byline", status: "published", authorIds: [authorId], showByline: true }));
+    const hidden = await getPublishedBySlug(db, s, "article", "no-byline");
+    const shown = await getPublishedBySlug(db, s, "article", "with-byline");
+    expect(hidden?.authorDetails).toEqual([]);
+    expect(hidden?.authors).toEqual([]);
+    expect(shown?.authorDetails.map((a) => a.name)).toEqual(["Ed Itor"]);
+    expect(shown?.authors.map((a) => a.name)).toEqual(["Ed Itor"]);
+  });
+});

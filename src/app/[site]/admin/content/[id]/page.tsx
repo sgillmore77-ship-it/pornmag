@@ -60,6 +60,7 @@ export default async function EditContent({ params, searchParams }: { params: Pr
         related: item.related.map((r) => ({ id: r.id, name: r.title })),
         isFeatured: item.isFeatured,
         isEditorsPick: item.isEditorsPick,
+        showByline: item.showByline,
         commentsEnabled: item.commentsEnabled,
         review: item.review
           ? {
@@ -106,6 +107,7 @@ export default async function EditContent({ params, searchParams }: { params: Pr
         related: [],
         isFeatured: false,
         isEditorsPick: false,
+        showByline: false,
         commentsEnabled: a.ctx.publication.settings.commentsEnabled,
         review: EMPTY_REVIEW,
         video: EMPTY_VIDEO,

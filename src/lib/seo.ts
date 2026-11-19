@@ -82,10 +82,8 @@ export function articleJsonLd(ctx: SiteContext, item: ContentPage): JsonLd {
     dateModified: item.updatedAt.toISOString(),
     mainEntityOfPage: absoluteUrl(ctx, contentPath(item)),
     image: image ? [absoluteMedia(ctx, image.storageKey)] : undefined,
-    author: item.authorDetails.map((a) => ({
-      "@type": "Person",
-      name: a.name,
-    })),
+    // No named author shown: credit the site itself.
+    author: item.authorDetails.length ? item.authorDetails.map((a) => ({ "@type": "Person", name: a.name })) : { "@id": `${ctx.origin}/#organization` },
     publisher: { "@id": `${ctx.origin}/#organization` },
     articleSection: item.category?.name,
     keywords: item.tags.length ? item.tags.map((t) => t.name).join(", ") : undefined,
@@ -130,7 +128,7 @@ export function reviewJsonLd(ctx: SiteContext, item: ContentPage): JsonLd | null
     name: item.title,
     url: absoluteUrl(ctx, contentPath(item)),
     datePublished: item.publishedAt.toISOString(),
-    author: item.authorDetails.map((a) => ({ "@type": "Person", name: a.name })),
+    author: item.authorDetails.length ? item.authorDetails.map((a) => ({ "@type": "Person", name: a.name })) : { "@id": `${ctx.origin}/#organization` },
     publisher: { "@id": `${ctx.origin}/#organization` },
     reviewBody: item.review.verdict ?? undefined,
     reviewRating: { "@type": "Rating", ratingValue: item.review.score, bestRating: item.review.scoreMax, worstRating: 0 },

@@ -8,7 +8,7 @@ import type { ResolvedSection } from "@/data/homepage";
 import { formatDate, formatDuration, formatNewsTime } from "@/lib/format";
 import type { SiteContext } from "@/lib/site-context";
 import { AdSlot } from "./ad-slot";
-import { bylineOf, countLabel, KickerDate, kickerOf, SectionHead, trendingMeta } from "./bits";
+import { byOf, countLabel, KickerDate, kickerOf, SectionHead, trendingMeta } from "./bits";
 import { Media } from "./media";
 import { ScoreBlock, ScoreInline } from "./score";
 
@@ -37,7 +37,7 @@ function Hero({ section, ctx, first }: Props<"hero">) {
           </h2>
           {item.standfirst && <p style={{ fontSize: "clamp(17px, 1.35cqw, 19px)", lineHeight: 1.55, color: "var(--muted)", textWrap: "pretty" }}>{item.standfirst}</p>}
           <div className="meta">
-            By {bylineOf(item)} · {item.readMinutes} min read
+            {[byOf(item), `${item.readMinutes} min read`].filter(Boolean).join(" · ")}
           </div>
           <Link href={href} className="btn btn-outline" style={{ alignSelf: "flex-start", marginTop: 6, fontSize: 14 }}>
             Read the feature →
@@ -59,7 +59,7 @@ function StoryCard({ item, ctx }: { item: ContentCard; ctx: SiteContext }) {
         {item.title}
       </h3>
       {item.standfirst && <p className="dek sc-dek">{item.standfirst}</p>}
-      <span className="meta sc-by">By {bylineOf(item)}</span>
+      {item.authors.length > 0 && <span className="meta sc-by">{byOf(item)}</span>}
     </Link>
   );
 }
@@ -209,7 +209,7 @@ function Picks({ section }: Props<"editors_picks">) {
               {p.title}
             </h3>
             {p.standfirst && <p className="dek">{p.standfirst}</p>}
-            <span className="meta">By {bylineOf(p)}</span>
+            {p.authors.length > 0 && <span className="meta">{byOf(p)}</span>}
           </Link>
         ))}
       </div>

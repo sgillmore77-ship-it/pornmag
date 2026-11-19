@@ -449,6 +449,8 @@ export const contentItems = pgTable(
     isFeatured: boolean("is_featured").notNull().default(false),
     /** Shown in the homepage's Editor's picks section. */
     isEditorsPick: boolean("is_editors_pick").notNull().default(false),
+    /** Show the author name to readers. Off by default (video-first site). */
+    showByline: boolean("show_byline").notNull().default(false),
     commentsEnabled: boolean("comments_enabled").notNull().default(true),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     scheduledFor: timestamp("scheduled_for", { withTimezone: true }),

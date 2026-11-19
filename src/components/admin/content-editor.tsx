@@ -76,6 +76,7 @@ export type EditorInitial = {
   related: Option[];
   isFeatured: boolean;
   isEditorsPick: boolean;
+  showByline: boolean;
   commentsEnabled: boolean;
   review: ReviewState;
   video: VideoState;
@@ -270,6 +271,7 @@ export function ContentEditor({
         relatedIds: v.related.map((r) => r.id),
         isFeatured: v.isFeatured,
         isEditorsPick: v.isEditorsPick,
+        showByline: v.showByline,
         commentsEnabled: v.commentsEnabled,
         seoTitle: v.seoTitle,
         metaDescription: v.metaDescription,
@@ -657,6 +659,10 @@ export function ContentEditor({
           </fieldset>
           <fieldset className="f" style={{ border: 0, padding: 0, margin: 0 }}>
             <legend style={{ marginBottom: 6 }}>Byline</legend>
+            <label className="check">
+              <input type="checkbox" checked={v.showByline} onChange={(e) => set("showByline", e.target.checked)} />
+              Show author name on the site <span className="hint">off by default</span>
+            </label>
             <div style={{ maxHeight: 160, overflowY: "auto", border: "1px solid var(--line)", padding: "4px 10px" }}>
               {authors.map((a) => (
                 <label key={a.id} className="check">

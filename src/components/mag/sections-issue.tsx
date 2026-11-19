@@ -8,7 +8,7 @@ import type { ResolvedSection } from "@/data/homepage";
 import { formatDate, formatDuration, formatNewsTime } from "@/lib/format";
 import type { SiteContext } from "@/lib/site-context";
 import { AdSlot } from "./ad-slot";
-import { bylineOf, countLabel, KickerDate, kickerOf, SectionHead, trendingMeta } from "./bits";
+import { byOf, bylineOf, countLabel, KickerDate, kickerOf, SectionHead, trendingMeta } from "./bits";
 import { Media } from "./media";
 import { ScoreCompact, ScoreRing, Stars } from "./score";
 
@@ -37,7 +37,7 @@ function Hero({ section, ctx, first }: Props<"hero">) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "16px 48px", alignItems: "flex-end", justifyContent: "space-between" }}>
             {item.standfirst && <p style={{ flex: "1 1 320px", maxWidth: 600, fontSize: "clamp(16px, 1.35cqw, 19px)", lineHeight: 1.5, color: "rgba(255,255,255,.88)" }}>{item.standfirst}</p>}
             <span className="label-mono" style={{ letterSpacing: "0.1em", color: "rgba(255,255,255,.78)" }}>
-              Words {bylineOf(item)} · {item.readMinutes} min read
+              {[byOf(item, "Words"), `${item.readMinutes} min read`].filter(Boolean).join(" · ")}
             </span>
           </div>
         </div>
@@ -92,7 +92,7 @@ function Latest({ section, ctx }: Props<"latest">) {
                     {s.title}
                   </span>
                   {s.standfirst && <span style={{ fontSize: 15, lineHeight: 1.5, color: "var(--muted)" }}>{s.standfirst}</span>}
-                  <span className="meta">By {bylineOf(s)}</span>
+                  {s.authors.length > 0 && <span className="meta">{byOf(s)}</span>}
                 </Link>
               </li>
             ))}
@@ -272,7 +272,7 @@ function Picks({ section }: Props<"editors_picks">) {
               {p.title}
             </h3>
             {p.standfirst && <p className="dek">{p.standfirst}</p>}
-            <span className="meta">By {bylineOf(p)}</span>
+            {p.authors.length > 0 && <span className="meta">{byOf(p)}</span>}
           </Link>
         ))}
       </div>

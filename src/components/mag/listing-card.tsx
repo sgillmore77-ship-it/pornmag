@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { contentPath, type ContentCard } from "@/data/content";
 import { formatDuration } from "@/lib/format";
-import { bylineOf, KickerDate } from "./bits";
+import { byOf, KickerDate } from "./bits";
 import { Media } from "./media";
 import { ScoreBlock, ScoreInline } from "./score";
 
@@ -49,7 +49,7 @@ export function ListingCard({ item, tz, priority, headingLevel = 3 }: { item: Co
       ) : (
         <>
           {item.standfirst && <p className="dek">{item.standfirst}</p>}
-          <span className="meta">By {bylineOf(item)}</span>
+          {item.authors.length > 0 && <span className="meta">{byOf(item)}</span>}
         </>
       )}
     </Link>
