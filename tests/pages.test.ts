@@ -163,6 +163,25 @@ describe("starter data migrations", () => {
     expect(await status(elsewhere.id)).toBe("published");
   });
 
+  it("trims the footer links and rewrites the About page", async () => {
+    const [main] = await db.select().from(t.publications).where(sql`${t.publications.slug} = 'main'`);
+    const footer = [
+      { title: "Watch", links: [{ label: "Latest videos", href: "/videos" }, { label: "Best Of", href: "/category/best-of" }] },
+      { title: "Read", links: [{ label: "Reviews", href: "/reviews" }, { label: "Features", href: "/features" }, { label: "The Wire", href: "/news" }] },
+      { title: "Magazine", links: [{ label: "Your account", href: "/account" }] },
+    ];
+    await db.update(t.publications).set({ settings: { ...main.settings, footer } }).where(sql`${t.publications.id} = ${main.id}`);
+    const text = readFileSync("drizzle/0014_footer_about.sql", "utf8");
+    await db.execute(sql.raw(text));
+    await db.execute(sql.raw(text));
+    const [after] = await db.select().from(t.publications).where(sql`${t.publications.id} = ${main.id}`);
+    expect(after.settings.footer).toEqual([footer[0]]);
+    expect(after.settings.commentsEnabled).toBe(main.settings.commentsEnabled);
+    const about = await getPublishedPage(db, site(main.id), "about");
+    expect(about?.seoTitle).toBe("About Ass to Mouth – Free ATM Porn Videos, Hand-Picked");
+    expect(JSON.stringify(about?.body)).toContain("What is ATM porn?");
+  });
+
   it("clears the seed's sample analytics on 'main' but keeps later real counts", async () => {
     const [main] = await db.select().from(t.publications).where(sql`${t.publications.slug} = 'main'`);
     const created = main.createdAt.toISOString().slice(0, 10);

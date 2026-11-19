@@ -99,6 +99,13 @@
       "when": 1795130623925,
       "tag": "0013_clear_sample_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795132243234,
+      "tag": "0014_footer_about",
+      "breakpoints": true
     }
   ]
 }
