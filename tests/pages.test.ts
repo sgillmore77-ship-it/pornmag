@@ -162,4 +162,28 @@ describe("starter data migrations", () => {
     expect(await status(otherType.id)).toBe("published");
     expect(await status(elsewhere.id)).toBe("published");
   });
+
+  it("clears the seed's sample analytics on 'main' but keeps later real counts", async () => {
+    const [main] = await db.select().from(t.publications).where(sql`${t.publications.slug} = 'main'`);
+    const created = main.createdAt.toISOString().slice(0, 10);
+    const dayAfter = new Date(main.createdAt.getTime() + 86_400_000).toISOString().slice(0, 10);
+    const dayBefore = new Date(main.createdAt.getTime() - 86_400_000).toISOString().slice(0, 10);
+    const story = await makeContent(db, main.id, { title: "Stats story", slug: "stats-story" });
+    await db.insert(t.trafficDailyStats).values([
+      { publicationId: main.id, day: dayBefore, source: "direct", views: 50 },
+      { publicationId: main.id, day: created, source: "direct", views: 40 },
+      { publicationId: main.id, day: dayAfter, source: "direct", views: 3 },
+      { publicationId: a.id, day: dayBefore, source: "direct", views: 9 },
+    ]);
+    await db.insert(t.contentDailyStats).values([
+      { publicationId: main.id, contentId: story.id, day: dayBefore, views: 20 },
+      { publicationId: main.id, contentId: story.id, day: dayAfter, views: 2 },
+    ]);
+    await db.execute(sql.raw(readFileSync("drizzle/0013_clear_sample_stats.sql", "utf8")));
+    const traffic = await db.select().from(t.trafficDailyStats);
+    expect(traffic.filter((r) => r.publicationId === main.id).map((r) => r.day)).toEqual([dayAfter]);
+    expect(traffic.filter((r) => r.publicationId === a.id)).toHaveLength(1);
+    const content = await db.select().from(t.contentDailyStats).where(sql`${t.contentDailyStats.publicationId} = ${main.id}`);
+    expect(content.map((r) => r.day)).toEqual([dayAfter]);
+  });
 });
