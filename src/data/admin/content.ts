@@ -490,6 +490,29 @@ export async function deleteContent(db: Db, s: Site, actor: Actor, id: string) {
   return deleted[0];
 }
 
+const bulkIds = z.array(z.string().min(1).max(64)).min(1, "Tick at least one item").max(200);
+
+/** Archives several items at once (hidden from the site, kept in the CMS). */
+export async function bulkArchiveContent(db: Db, s: Site, actor: Actor, ids: string[]) {
+  if (!can(actor, "content.edit.any")) throw new ForbiddenError("content.edit.any");
+  const list = bulkIds.parse(ids);
+  return db
+    .update(contentItems)
+    .set({ status: "archived", updatedAt: new Date() })
+    .where(and(eq(contentItems.publicationId, s.publicationId), inArray(contentItems.id, list)))
+    .returning({ id: contentItems.id, title: contentItems.title });
+}
+
+/** Permanently deletes several items at once. */
+export async function bulkDeleteContent(db: Db, s: Site, actor: Actor, ids: string[]) {
+  if (!can(actor, "content.edit.any")) throw new ForbiddenError("content.edit.any");
+  const list = bulkIds.parse(ids);
+  return db
+    .delete(contentItems)
+    .where(and(eq(contentItems.publicationId, s.publicationId), inArray(contentItems.id, list)))
+    .returning({ id: contentItems.id, title: contentItems.title });
+}
+
 /**
  * Publishes every scheduled item whose time has come, across all
  * publications. Returns which publications changed so their caches can be

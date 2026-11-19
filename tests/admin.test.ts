@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/db/client";
 import * as t from "@/db/schema";
-import { canEditItem, getContentForEdit, publishDue, saveContent, type ContentInput } from "@/data/admin/content";
+import { bulkArchiveContent, bulkDeleteContent, canEditItem, getContentForEdit, publishDue, saveContent, type ContentInput } from "@/data/admin/content";
 import { sniffImageType, storageKeyFor } from "@/data/admin/media";
 import { findRedirect, normalisePath, saveHomepage, saveRedirect, saveSettings } from "@/data/admin/site";
 import { authorForUser, deleteAuthor, saveCategory, saveTag } from "@/data/admin/taxonomy";
@@ -271,5 +271,28 @@ describe("ad links", () => {
     expect(row.clickUrl).toBe("https://adultseo.com");
     await expect(saveAd(db, s, { ...base, clickUrl: "javascript:alert(1)" })).rejects.toThrow(/web address/);
     await expect(saveAd(db, s, { ...base, clickUrl: "nodot" })).rejects.toThrow(/web address/);
+  });
+});
+
+describe("bulk actions", () => {
+  it("archives and deletes several items, only within the publication, for editors only", async () => {
+    const s = site(pub.id);
+    const [x, y, z] = [await makeContent(db, pub.id), await makeContent(db, pub.id), await makeContent(db, pub.id)];
+    const theirs = await makeContent(db, other.id);
+    await expect(bulkArchiveContent(db, s, actor("author", "author"), [x.id])).rejects.toThrow(/permission/i);
+    await expect(bulkArchiveContent(db, s, actor("editor", "editor"), [])).rejects.toThrow();
+
+    const archived = await bulkArchiveContent(db, s, actor("editor", "editor"), [x.id, y.id, theirs.id]);
+    expect(archived.map((r) => r.id).sort()).toEqual([x.id, y.id].sort());
+    const statusOf = async (id: string) => (await db.select().from(t.contentItems).where(eq(t.contentItems.id, id)))[0]?.status;
+    expect(await statusOf(x.id)).toBe("archived");
+    expect(await statusOf(theirs.id)).toBe("published");
+
+    const deleted = await bulkDeleteContent(db, s, actor("editor", "editor"), [x.id, z.id, theirs.id]);
+    expect(deleted).toHaveLength(2);
+    expect(await statusOf(x.id)).toBeUndefined();
+    expect(await statusOf(z.id)).toBeUndefined();
+    expect(await statusOf(y.id)).toBe("archived");
+    expect(await statusOf(theirs.id)).toBe("published");
   });
 });

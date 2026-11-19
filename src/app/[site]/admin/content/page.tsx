@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Empty, PageHead, StatusBadge, When } from "@/components/admin/bits";
+import { ContentBulk } from "@/components/admin/content-bulk";
 import { CONTENT_STATUSES, CONTENT_TYPES, listContentAdmin } from "@/data/admin/content";
 import { contentPath } from "@/data/content";
 import { requireAdminPage } from "@/lib/admin";
@@ -64,10 +65,14 @@ export default async function ContentList({ searchParams }: { searchParams: Prom
       {items.length === 0 ? (
         <Empty action={{ href: "/admin/content/new", label: "Write something" }}>No content matches.</Empty>
       ) : (
+        <ContentBulk>
         <div className="panel tbl-wrap">
           <table className="tbl">
             <thead>
               <tr>
+                <th style={{ width: 36 }}>
+                  <input type="checkbox" data-all aria-label="Tick all on this page" />
+                </th>
                 <th>Title</th>
                 <th>Type</th>
                 <th>Status</th>
@@ -79,6 +84,9 @@ export default async function ContentList({ searchParams }: { searchParams: Prom
             <tbody>
               {items.map((i) => (
                 <tr key={i.id}>
+                  <td>
+                    <input type="checkbox" name="ids" value={i.id} aria-label={`Tick “${i.title}”`} />
+                  </td>
                   <td>
                     <Link href={`/admin/content/${i.id}`} className="t">
                       {i.title}
@@ -110,6 +118,7 @@ export default async function ContentList({ searchParams }: { searchParams: Prom
             </tbody>
           </table>
         </div>
+        </ContentBulk>
       )}
       {(page > 1 || hasNext) && (
         <nav className="toolbar label-mono" style={{ justifyContent: "space-between", marginTop: 16 }}>

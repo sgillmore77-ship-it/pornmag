@@ -8,7 +8,7 @@
  */
 import { redirect } from "next/navigation";
 import { audit, purge, requireAdmin, run, type ActionResult } from "@/lib/admin";
-import { deleteContent, saveContent, type ContentInput } from "@/data/admin/content";
+import { bulkArchiveContent, bulkDeleteContent, deleteContent, saveContent, type ContentInput } from "@/data/admin/content";
 import {
   ALLOWED_IMAGE_TYPES,
   createMediaRow,
@@ -51,6 +51,17 @@ export async function saveContentAction(input: ContentInput): Promise<ActionResu
     if (r.status === "published" || r.wasLive) await purge(a);
     return { id: r.id, slug: r.slug };
   }, "Saved");
+}
+
+export async function bulkContentAction(op: "archive" | "delete", ids: string[]): Promise<ActionResult<{ count: number }>> {
+  return run(async () => {
+    const a = await requireAdmin("content.edit.any");
+    const fn = op === "archive" ? bulkArchiveContent : bulkDeleteContent;
+    const rows = await fn(a.db, a.ctx.site, a.actor, ids);
+    for (const r of rows) await audit(a, op === "archive" ? "content.archive" : "content.delete", "content", r.id, { title: r.title });
+    await purge(a);
+    return { count: rows.length };
+  });
 }
 
 export async function deleteContentAction(id: string): Promise<ActionResult> {

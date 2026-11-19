@@ -6,7 +6,7 @@ import * as t from "@/db/schema";
 import { deleteMessage, deletePage, getPageAdmin, listMessages, listPagesAdmin, savePage, setMessageHandled, unhandledMessageCount } from "@/data/admin/pages";
 import { CONTACT_HOURLY_LIMIT, getPublishedPage, listFooterPages, listPublishedPages, submitContactMessage } from "@/data/pages";
 import { site } from "@/data/site";
-import { makePublication, setupTestDb } from "./helpers/db";
+import { makeContent, makePublication, setupTestDb } from "./helpers/db";
 
 let db: Db;
 let close: () => Promise<void>;
@@ -143,5 +143,23 @@ describe("starter data migrations", () => {
       "Latest videos", "ATM Anal", "Double Anal ATM", "Triple Anal ATM", "Amateur ATM", "ATM Threesomes",
       "Brunette ATM", "Blonde ATM", "Redhead ATM", "Ebony ATM", "Asian ATM",
     ]);
+  });
+
+  it("archives only the seed sample stories on 'main', and is safe to re-run", async () => {
+    const [main] = await db.select().from(t.publications).where(sql`${t.publications.slug} = 'main'`);
+    const sample = await makeContent(db, main.id, { type: "video", title: "Night Swim", slug: "night-swim-v" });
+    const draft = await makeContent(db, main.id, { type: "article", status: "draft", title: "Unpublished draft", slug: "unpublished-draft" });
+    const real = await makeContent(db, main.id, { type: "video", title: "Classic Ass to Mouth action", slug: "classic" });
+    const otherType = await makeContent(db, main.id, { type: "news", title: "Gilded", slug: "gilded-news" });
+    const elsewhere = await makeContent(db, a.id, { type: "video", title: "Night Swim", slug: "night-swim" });
+    const text = readFileSync("drizzle/0011_archive_samples.sql", "utf8");
+    await db.execute(sql.raw(text));
+    await db.execute(sql.raw(text));
+    const status = async (id: string) => (await db.select({ s: t.contentItems.status }).from(t.contentItems).where(sql`${t.contentItems.id} = ${id}`))[0].s;
+    expect(await status(sample.id)).toBe("archived");
+    expect(await status(draft.id)).toBe("archived");
+    expect(await status(real.id)).toBe("published");
+    expect(await status(otherType.id)).toBe("published");
+    expect(await status(elsewhere.id)).toBe("published");
   });
 });

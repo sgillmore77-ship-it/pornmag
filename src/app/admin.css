@@ -154,3 +154,4 @@
 
 /* Import videos: recent feed buttons */
 .vimp-recent { display: inline-flex; gap: 2px; align-items: center; }
+.tbl input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--brand); vertical-align: middle; }
