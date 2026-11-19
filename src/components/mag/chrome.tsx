@@ -5,6 +5,7 @@ import type { SiteContext } from "@/lib/site-context";
 import { layoutOf } from "@/lib/theme";
 import { AdSlot } from "./ad-slot";
 import { MobileMenu, NavRail } from "./nav-links";
+import { StaffOnly } from "./staff-only";
 import { Wordmark } from "./wordmark";
 
 
@@ -24,7 +25,7 @@ function navFor(ctx: SiteContext): NavLink[] {
   ];
 }
 
-/** Links for the mobile menu: main nav plus account. */
+/** Links for the mobile menu: main nav plus extras ("Your account" shows to staff only). */
 function menuFor(ctx: SiteContext): NavLink[] {
   const extra = [
     { label: "Search", href: "/search" },
@@ -61,7 +62,9 @@ function FeedHeader({ ctx }: { ctx: SiteContext }) {
               <SearchIcon />
               Search
             </Link>
-            <Link href="/account">Account</Link>
+            <StaffOnly>
+              <Link href="/account">Account</Link>
+            </StaffOnly>
           </div>
           <div className="only-m" style={{ alignItems: "center" }}>
             <Link href="/search" className="icon-btn" aria-label="Search">
@@ -92,9 +95,11 @@ function IssueHeader({ ctx }: { ctx: SiteContext }) {
           </span>
           <span>{ctx.publication.settings.issueLabel ?? ctx.publication.tagline ?? ""}</span>
           <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 24 }}>
-            <Link href="/account" className="only-d">
-              Account
-            </Link>
+            <StaffOnly>
+              <Link href="/account" className="only-d">
+                Account
+              </Link>
+            </StaffOnly>
             <Link href="/search" className="icon-btn" aria-label="Search" style={{ justifyContent: "flex-end" }}>
               <SearchIcon size={18} />
             </Link>
@@ -124,7 +129,11 @@ export function SiteFooter({ ctx }: { ctx: SiteContext }) {
     const links = ctx.footerPages.filter((p) => p.footerGroup === group).map((p) => ({ label: p.title, href: `/${p.slug}` }));
     return links.length ? [{ title, links }] : [];
   };
-  const columns = [...(publication.settings.footer ?? []), ...pageColumn("About", "about"), ...pageColumn("Legal", "legal")];
+  // The account link is for staff only, so it's left out of the footer.
+  const settingsColumns = (publication.settings.footer ?? [])
+    .map((c) => ({ ...c, links: c.links.filter((l) => l.href !== "/account") }))
+    .filter((c) => c.links.length > 0);
+  const columns = [...settingsColumns, ...pageColumn("About", "about"), ...pageColumn("Legal", "legal")];
   const year = new Date().getFullYear();
 
   const cols = columns.length > 0 && (

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useIsStaff } from "./staff-only";
 import type { NavLink } from "@/db/schema";
 
 function isActive(pathname: string, href: string) {
@@ -26,6 +27,8 @@ export function NavRail({ items, label = "Sections" }: { items: NavLink[]; label
 /** Mobile menu: full ink panel, display-font links, ✕ to close. */
 export function MobileMenu({ items, className = "" }: { items: NavLink[]; className?: string }) {
   const [open, setOpen] = useState(false);
+  const staff = useIsStaff();
+  const shown = staff ? items : items.filter((n) => n.href !== "/account");
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -52,7 +55,7 @@ export function MobileMenu({ items, className = "" }: { items: NavLink[]; classN
               ✕
             </button>
           </div>
-          {items.map((n) => (
+          {shown.map((n) => (
             <Link key={n.href} href={n.href} className="mlink" onClick={() => setOpen(false)}>
               {n.label}
             </Link>
