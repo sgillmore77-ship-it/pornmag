@@ -8,6 +8,11 @@ export async function generateMetadata({ params }: LayoutProps<"/[site]">): Prom
   return {
     metadataBase: new URL(ctx.origin),
     title: { default: ctx.publication.name, template: `%s · ${ctx.publication.name}` },
+    // Files in public/ (see the proxy matcher); Next adds src/app/favicon.ico itself.
+    icons: {
+      icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+      apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+    },
     description: ctx.publication.description ?? ctx.publication.tagline ?? undefined,
     openGraph: { siteName: ctx.publication.name, type: "website" },
     other: { rating: "adult" },
