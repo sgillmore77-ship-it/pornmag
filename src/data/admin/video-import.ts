@@ -34,6 +34,8 @@ export type FeedPreview = {
   videos: (FeedVideo & { imported: boolean; approved: boolean })[];
   unapprovedHosts: string[];
   skippedRows: number;
+  /** Readable videos in the whole feed (only the first `limit` are shown). */
+  totalInFeed: number;
 };
 
 export class ImportError extends Error {}
@@ -278,6 +280,7 @@ export async function previewFeedText(db: Db, s: Site, text: string, limit = 100
     videos: shown.map((v) => ({ ...v, imported: done.has(v.embedUrl), approved: !!toEmbed(v.embedUrl, hosts) })),
     unapprovedHosts: [...new Set(shown.filter((v) => !toEmbed(v.embedUrl, hosts)).map((v) => v.embedHost))],
     skippedRows,
+    totalInFeed: videos.length,
   };
 }
 

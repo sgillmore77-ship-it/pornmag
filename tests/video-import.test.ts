@@ -282,6 +282,10 @@ describe("uploading a feed file", () => {
     const p = await previewFeedText(db, s, FEED);
     expect(p.videos).toHaveLength(2);
     expect(p.skippedRows).toBeGreaterThan(0);
+    expect(p.totalInFeed).toBe(2);
+    const one = await previewFeedText(db, s, FEED, 1);
+    expect(one.videos).toHaveLength(1);
+    expect(one.totalInFeed).toBe(2);
   });
 
   it("explains files that aren't feeds", async () => {
@@ -322,5 +326,21 @@ describe("lead videos on every story type", () => {
     expect(await db.select().from(t.reviewDetails).where(eq(t.reviewDetails.contentId, saved.id))).toEqual([]);
     await saveContent(db, s, editor, { ...story("article"), id: saved.id, title: "Cleared", video: undefined });
     expect(await db.select().from(t.videoDetails).where(eq(t.videoDetails.contentId, saved.id))).toEqual([]);
+  });
+});
+
+describe("partner screenshots", () => {
+  it("works out the other frames and larger sizes from the feed's thumbnail", async () => {
+    const { frameUrls, largerSizes, parseShot } = await import("@/lib/screenshots");
+    const u = "https://tn.txxx.tube/contents/videos_screenshots/21837000/21837257/288x162/5.jpg";
+    expect(parseShot(u)).toMatchObject({ width: 288, height: 162, n: 5, ext: ".jpg" });
+    const frames = frameUrls(u, 3);
+    expect(frames).toEqual([1, 2, 3].map((n) => `https://tn.txxx.tube/contents/videos_screenshots/21837000/21837257/288x162/${n}.jpg`));
+    const bigger = largerSizes(u);
+    expect(bigger[0]).toBe("https://tn.txxx.tube/contents/videos_screenshots/21837000/21837257/1920x1080/5.jpg");
+    expect(bigger.at(-1)).toBe("https://tn.txxx.tube/contents/videos_screenshots/21837000/21837257/320x180/5.jpg");
+    expect(frameUrls("https://example.com/thumb.jpg")).toEqual(["https://example.com/thumb.jpg"]);
+    expect(largerSizes("https://example.com/thumb.jpg")).toEqual([]);
+    expect(parseShot("http://insecure.example/288x162/1.jpg")).toBeNull();
   });
 });

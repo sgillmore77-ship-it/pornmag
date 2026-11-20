@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { approveVideoHostAction, forgetRecentFeedAction, importVideosAction, previewFeedAction, previewFeedFileAction } from "@/app/[site]/admin/actions";
 import type { FeedPreview, ImportResult } from "@/data/admin/video-import";
 import { feedLabel } from "@/lib/feed-label";
+import { ScreenshotPicker, sharpest } from "./screenshot-picker";
 
 const fmt = (s: number | null) => (s == null ? "—" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`);
 
@@ -24,20 +25,29 @@ export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: bo
   const [pending, start] = useTransition();
   const [filter, setFilter] = useState("");
   const [watching, setWatching] = useState<FeedPreview["videos"][number] | null>(null);
+  const [playing, setPlaying] = useState(false);
+  /** Picture chosen per video (sourceId → screenshot address). */
+  const [pictures, setPictures] = useState<Record<string, string>>({});
+  const [limit, setLimit] = useState(200);
+  const [fromFile, setFromFile] = useState(false);
+  const [importNote, setImportNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (!watching) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- each video opens on its screenshots, not the player
+    setPlaying(false);
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setWatching(null);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [watching]);
 
-  const load = (feedUrl = url) =>
+  const load = (feedUrl = url, max = limit) =>
     start(async () => {
       setError(null);
       setResult(null);
       setPicked([]);
-      const r = await previewFeedAction(feedUrl, 200);
+      setFromFile(false);
+      const r = await previewFeedAction(feedUrl, max);
       setBusy(!r.ok && /limiting|answered 4|answered 5|Couldn't download/i.test(r.error));
       if (r.ok) {
         setPreview(r.data ?? null);
@@ -73,6 +83,18 @@ export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: bo
                 Close
               </button>
             </div>
+            <ScreenshotPicker
+              key={watching.sourceId}
+              thumbUrl={watching.thumbUrl}
+              chosen={pictures[watching.sourceId] ?? null}
+              onChoose={(u) => setPictures((m) => ({ ...m, [watching.sourceId]: u }))}
+            />
+            {!playing ? (
+              <p className="hint" style={{ margin: 0 }}>
+                Judge it from the screenshots where you can: plays here count as views on your partner account.{" "}
+                <button type="button" className="btn btn-sm" onClick={() => setPlaying(true)}>▶ Play video</button>
+              </p>
+            ) : (
             <div className="vimp-frame">
               <iframe
                 src={watching.embedUrl}
@@ -83,6 +105,7 @@ export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: bo
                 referrerPolicy="strict-origin-when-cross-origin"
               />
             </div>
+            )}
             <div className="toolbar" style={{ justifyContent: "space-between" }}>
               <span className="sub">
                 {fmt(watching.durationSeconds)} · {watching.categories.join(", ")}
@@ -185,6 +208,7 @@ export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: bo
                     return setError("That file is too large. In TubeCorporate, set the feed limit to 500 videos or fewer.");
                   }
                   const r = await previewFeedFileAction(await f.text(), 500);
+                  setFromFile(true);
                   if (r.ok) {
                     setPreview(r.data ?? null);
                     setBusy(false);
@@ -228,8 +252,29 @@ export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: bo
         <section className="panel">
           <div className="panel-head">
             <h2>
-              {preview.videos.length} videos in the feed{preview.skippedRows ? ` (${preview.skippedRows} unreadable rows skipped)` : ""}
+              {preview.totalInFeed > preview.videos.length
+                ? `Showing ${preview.videos.length} of ${preview.totalInFeed.toLocaleString("en-GB")} videos in the feed`
+                : `${preview.videos.length} videos in the feed`}
+              {preview.skippedRows ? ` (${preview.skippedRows} unreadable rows skipped)` : ""}
             </h2>
+            {!fromFile && (
+            <label className="check" style={{ gap: 6 }}>
+              Show
+              <select
+                value={limit}
+                disabled={pending}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  setLimit(n);
+                  if (url) load(url, n);
+                }}
+              >
+                {[100, 200, 500].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+            )}
           </div>
           <div className="panel-pad form-grid">
             {preview.unapprovedHosts.length > 0 && (
@@ -275,17 +320,24 @@ export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: bo
                 disabled={pending || picked.length === 0}
                 onClick={() =>
                   start(async () => {
-                    const chosen = preview.videos.filter((v) => picked.includes(v.sourceId));
+                    setImportNote("Finding the sharpest pictures…");
+                    // Use the picture chosen for each video, otherwise the sharpest copy of the feed's main screenshot.
+                    const chosen = await Promise.all(
+                      preview.videos
+                        .filter((v) => picked.includes(v.sourceId))
+                        .map(async (v) => ({ ...v, thumbUrl: pictures[v.sourceId] ?? (v.thumbUrl ? ((await sharpest(v.thumbUrl))?.url ?? v.thumbUrl) : null) })),
+                    );
+                    setImportNote(null);
                     const r = await importVideosAction(chosen, { categoriesAsTags: cats, tagsAsTags: tags });
                     if (!r.ok) return setError(r.error);
                     setResult(r.data ?? null);
                     setPicked([]);
-                    const p = await previewFeedAction(url, 200);
+                    const p = await previewFeedAction(url, limit);
                     if (p.ok) setPreview(p.data ?? null);
                   })
                 }
               >
-                {pending && picked.length ? "Importing…" : "Import as drafts"}
+                {importNote ?? (pending && picked.length ? "Importing…" : "Import as drafts")}
               </button>
             </div>
             <div className="toolbar">
@@ -307,11 +359,12 @@ export function VideoImporter({ canApprove, recentFeeds = [] }: { canApprove: bo
                     <button type="button" className="vimp-thumb" onClick={() => setWatching(v)} aria-label={`Preview ${v.title}`}>
                       {v.thumbUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element -- admin-only preview straight from the partner; imports copy it to our storage
-                        <img src={v.thumbUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                        <img src={pictures[v.sourceId] ?? v.thumbUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
                       ) : (
                         <span className="vimp-none">No thumbnail</span>
                       )}
-                      <span className="vimp-play" aria-hidden>▶ Preview</span>
+                      <span className="vimp-play" aria-hidden>Screenshots</span>
+                      {pictures[v.sourceId] && <span className="vimp-chosen">Picture chosen</span>}
                       <span className="vimp-dur">{fmt(v.durationSeconds)}</span>
                     </button>
                     <label className="vimp-meta">
